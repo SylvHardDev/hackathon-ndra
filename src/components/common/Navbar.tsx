@@ -3,6 +3,7 @@ import { UserMenu } from "./UserMenu";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
+import logoMpa from "@/assets/Logo_MP_Agency-removebg.png";
 
 interface HeaderProps {
   className?: string;
@@ -21,6 +22,7 @@ const Navbar = ({ className }: HeaderProps) => {
           to="#"
           className="flex items-center space-x-2 font-bold text-xl hover:text-primary transition-colors"
         >
+          <img src={logoMpa} alt="logo MPA" className="h-16 w-16" />
           MPA Workboard
         </Link>
 
@@ -28,11 +30,8 @@ const Navbar = ({ className }: HeaderProps) => {
           <UserMenu />
           <div className="flex items-center gap-3">
             <>
-              <Button variant="ghost" asChild>
-                <Link to="/login">Sign in</Link>
-              </Button>
               <Button asChild>
-                <Link to="/create-account">Get Started</Link>
+                <Link to="/login">Sign in</Link>
               </Button>
             </>
           </div>
