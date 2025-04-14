@@ -62,7 +62,7 @@ export default function LoginPage() {
           <Button className="w-full">Se connecter</Button>
           <div className="flex justify-between text-sm">
             <Link
-              to="/reset-password"
+              to="/forgot-password"
               className="text-blue-600 hover:underline"
             >
               Mot de passe oublié ?

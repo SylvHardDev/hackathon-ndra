@@ -8,6 +8,7 @@ import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import MainLayout from "@/layouts/MainLayout";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 
 export default function AppRoutes() {
   return (
@@ -21,6 +22,7 @@ export default function AppRoutes() {
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       </Route>
 
       {/* Routes protégées */}
