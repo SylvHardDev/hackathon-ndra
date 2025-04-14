@@ -5,10 +5,8 @@ import Footer from "@/components/common/Footer";
 export default function MainLayout() {
   return (
     <div className="flex flex-col min-h-screen">
-      <header>
-        {/* Navbar personnalisé ou wrapper d'un composant shadcn/ui */}
-        <Navbar />
-      </header>
+      {/* Navbar personnalisé ou wrapper d'un composant shadcn/ui */}
+      <Navbar />
       <main className="flex-grow">
         {/* Le contenu de la page sera injecté ici */}
         <Outlet />
