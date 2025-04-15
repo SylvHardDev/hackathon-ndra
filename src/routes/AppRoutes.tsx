@@ -1,4 +1,3 @@
-// src/routes/AppRoutes.tsx
 import { Routes, Route } from "react-router-dom";
 import AuthLayout from "@/layouts/AuthLayout";
 import LandingPage from "@/pages/LandingPage";
