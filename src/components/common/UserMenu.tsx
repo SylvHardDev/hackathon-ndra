@@ -1,12 +1,5 @@
 "use client";
 import {
-  CircleUser,
-  CreditCard,
-  LogOut,
-  Plus,
-  User as UserIcon,
-} from "lucide-react";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -15,10 +8,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLogout } from "@/hooks/useLogout";
+import {
+  CircleUser,
+  CreditCard,
+  LogOut,
+  Plus,
+  User as UserIcon,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 
 export function UserMenu() {
+  const { logout, isLoading } = useLogout();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -70,9 +73,13 @@ export function UserMenu() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400">
+        <DropdownMenuItem
+          onClick={logout}
+          disabled={isLoading}
+          className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+        >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Sign out</span>
+          <span>{isLoading ? "Déconnexion..." : "Se déconnecter"}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
