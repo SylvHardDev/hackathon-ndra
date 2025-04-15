@@ -1,19 +1,18 @@
-import { Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@/components/dashboard/theme-provider";
 import AuthLayout from "@/layouts/AuthLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import MainLayout from "@/layouts/MainLayout";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
-import ResetPasswordPage from "@/pages/ResetPasswordPage";
-import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
-import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import ProfilePage from "@/pages/ProfilePage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
-import DashboardLayout from "@/layouts/DashboardLayout";
-import { ThemeProvider } from "@/components/dashboard/theme-provider";
 import { Profile } from "@/pages/dashboard/profile";
 import { ProjectManagement } from "@/pages/dashboard/project-management";
 import { UserManagement } from "@/pages/dashboard/user-management";
-
+import { Route, Routes } from "react-router-dom";
 
 export default function App() {
   return (
@@ -22,12 +21,12 @@ export default function App() {
         {/* Routes publiques */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
         {/* Routes d'authentification */}
         <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
