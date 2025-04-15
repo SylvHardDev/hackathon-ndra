@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import CreateProjectDialog from "./CreateProjectDialog";
 
 const projects = [
   {
@@ -32,16 +33,15 @@ export function ProjectManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Gestion des projets</h1>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Project
-        </Button>
+        <CreateProjectDialog />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Projects
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{projects.length}</div>
@@ -76,10 +76,7 @@ export function ProjectManagement() {
       <div className="flex items-center space-x-2">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search projects..."
-            className="pl-8"
-          />
+          <Input placeholder="Search projects..." className="pl-8" />
         </div>
         <Select defaultValue="all">
           <SelectTrigger className="w-[180px]">
@@ -107,12 +104,18 @@ export function ProjectManagement() {
                   <span className="text-sm font-medium">{project.status}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Team Members</span>
+                  <span className="text-sm text-muted-foreground">
+                    Team Members
+                  </span>
                   <span className="text-sm font-medium">{project.members}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Progress</span>
-                  <span className="text-sm font-medium">{project.progress}%</span>
+                  <span className="text-sm text-muted-foreground">
+                    Progress
+                  </span>
+                  <span className="text-sm font-medium">
+                    {project.progress}%
+                  </span>
                 </div>
               </div>
             </CardContent>

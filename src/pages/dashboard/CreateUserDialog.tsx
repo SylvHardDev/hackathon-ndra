@@ -41,7 +41,9 @@ export default function CreateUserDialog() {
       {/* Contenu de la popup */}
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
+          <DialogTitle className="text-3xl font-bold">
+            Créer un nouvel utilisateur
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-1">
