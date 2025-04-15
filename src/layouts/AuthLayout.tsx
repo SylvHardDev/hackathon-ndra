@@ -16,7 +16,7 @@ export default function AuthLayout() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        Chargement...
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -28,7 +28,15 @@ export default function AuthLayout() {
     location.pathname.startsWith("/profiledashboard");
 
   if (isDashboardRoute && !isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/user-profile" replace />;
+  }
+
+  if (
+    !isAdmin &&
+    location.pathname !== "/user-profile" &&
+    location.pathname !== "/reset-password"
+  ) {
+    return <Navigate to="/user-profile" replace />;
   }
 
   return (

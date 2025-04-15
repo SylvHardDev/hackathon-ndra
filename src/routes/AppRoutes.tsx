@@ -6,8 +6,8 @@ import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
 import NotFoundPage from "@/pages/NotFoundPage";
-import ProfilePage from "@/pages/ProfilePage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import UserPage from "@/pages/UserPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
 import { Profile } from "@/pages/dashboard/profile";
 import { ProjectManagement } from "@/pages/dashboard/project-management";
@@ -27,8 +27,10 @@ export default function App() {
 
         {/* Routes protégées */}
         <Route element={<AuthLayout />}>
-          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+          {/* Route pour les utilisateurs non-admin */}
+          <Route path="/user-profile" element={<UserPage />} />
 
           {/* Routes Admin (protégées par AuthLayout) */}
           <Route element={<DashboardLayout />}>
