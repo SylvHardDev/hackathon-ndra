@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectStatusDot from "./ProjectStatusDot";
+import { Link } from "react-router-dom";
 
 export type ProjectType = "video" | "design";
 
@@ -25,6 +26,7 @@ export interface Projet {
   collaborateur: string;
   client: string;
   type: ProjectType;
+  dateDebut?: string;
 }
 
 // Exemple de données simulées
@@ -98,7 +100,14 @@ export default function ProjectListView() {
             <TableBody>
               {dummyProjects.map((project) => (
                 <TableRow key={project.id} className="hover:bg-gray-50/2">
-                  <TableCell className="font-medium">{project.titre}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link
+                      to={`/projects/${project.id}`}
+                      className="hover:underline"
+                    >
+                      {project.titre}
+                    </Link>
+                  </TableCell>
                   <TableCell>
                     <ProjectStatusDot project={project} />
                   </TableCell>

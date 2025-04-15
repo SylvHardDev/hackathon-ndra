@@ -13,7 +13,7 @@ import { ThemeProvider } from "@/components/dashboard/theme-provider";
 import { Profile } from "@/pages/dashboard/profile";
 import { ProjectManagement } from "@/pages/dashboard/project-management";
 import { UserManagement } from "@/pages/dashboard/user-management";
-
+import ProjectDetail from "@/pages/dashboard/project-detail";
 
 export default function App() {
   return (
@@ -38,6 +38,7 @@ export default function App() {
           <Route path="/profiledashboard" element={<Profile />} />
           <Route path="/users" element={<UserManagement />} />
           <Route path="/projects" element={<ProjectManagement />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
         </Route>
 
         {/* Page 404 */}
