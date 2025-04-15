@@ -16,9 +16,9 @@ const LandingPage: React.FC = () => {
   // const { resolvedTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/95">
+    <div className="min-h-screen w-vw bg-gradient-to-b from-background to-background/95 flex items-center justify-center">
       {/* Hero Section */}
-      <div className="container pt-32 pb-20">
+      <div>
         {/* Content */}
         <div className="max-w-[800px] mx-auto text-center space-y-8 mb-20">
           <div className="space-y-6">
