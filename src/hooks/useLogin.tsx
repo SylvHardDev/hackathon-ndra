@@ -16,10 +16,10 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-interface Account {
+export interface Account {
   id: number;
   nom: string;
-  role: string;
+  role: "admin" | "client";
   user_id: string;
 }
 
@@ -42,8 +42,6 @@ export function useLogin() {
 
       if (authError) throw authError;
 
-      console.log("authData", authData);
-
       // 2. Récupération des données du compte
       const { data: accountData, error: accountError } = await supabase
         .from("accounts")
@@ -53,9 +51,15 @@ export function useLogin() {
 
       if (accountError) throw accountError;
 
+      const account = accountData as Account;
+
+      // Stocker les informations du compte dans le localStorage
+      localStorage.setItem("userRole", account.role);
+      localStorage.setItem("userName", account.nom);
+
       return {
         user: authData.user,
-        account: accountData as Account,
+        account,
       };
     },
     onSuccess: (data) => {
@@ -63,7 +67,13 @@ export function useLogin() {
         title: "Connexion réussie",
         description: `Bienvenue ${data.account.nom}`,
       });
-      navigate("/dashboard");
+
+      // Redirection basée sur le rôle
+      if (data.account.role === "admin") {
+        navigate("/dashboard");
+      } else {
+        navigate("/profile"); // Redirection des utilisateurs non-admin vers leur profil
+      }
     },
     onError: (error) => {
       toast({

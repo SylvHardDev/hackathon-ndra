@@ -1,3 +1,4 @@
+import { AdminRoute } from "@/components/AdminRoute";
 import { ThemeProvider } from "@/components/dashboard/theme-provider";
 import AuthLayout from "@/layouts/AuthLayout";
 import DashboardLayout from "@/layouts/DashboardLayout";
@@ -23,20 +24,22 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 
         {/* Routes d'authentification */}
         <Route element={<AuthLayout />}>
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 
-        {/* Routes protégées */}
-        <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/profiledashboard" element={<Profile />} />
-          <Route path="/users" element={<UserManagement />} />
-          <Route path="/projects" element={<ProjectManagement />} />
+        {/* Routes protégées Admin */}
+        <Route element={<AdminRoute />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profiledashboard" element={<Profile />} />
+            <Route path="/users" element={<UserManagement />} />
+            <Route path="/projects" element={<ProjectManagement />} />
+          </Route>
         </Route>
 
         {/* Page 404 */}

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
 
 export function useSession() {
   return useQuery({
