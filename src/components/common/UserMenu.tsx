@@ -45,7 +45,7 @@ export function UserMenu() {
 
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link to="/profile" className="w-full cursor-pointer">
+            <Link to="/profileDashboard" className="w-full cursor-pointer">
               <UserIcon className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </Link>
