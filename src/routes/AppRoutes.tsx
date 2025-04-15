@@ -22,14 +22,15 @@ export default function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 
-        {/* Routes d'authentification */}
+        {/* Routes protégées */}
         <Route element={<AuthLayout />}>
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          {/* Routes protégées */}
+
+          {/* Routes Admin (protégées par AuthLayout) */}
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profiledashboard" element={<Profile />} />
