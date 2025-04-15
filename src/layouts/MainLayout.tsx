@@ -8,11 +8,9 @@ export default function MainLayout() {
       {/* Navbar personnalisé ou wrapper d'un composant shadcn/ui */}
       <Navbar />
       <main className="flex-grow">
-        {/* Le contenu de la page sera injecté ici */}
         <Outlet />
       </main>
       <footer>
-        {/* Footer de l'application */}
         <Footer />
       </footer>
     </div>
