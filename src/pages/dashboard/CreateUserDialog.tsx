@@ -37,7 +37,7 @@ const formSchema = z.object({
     .string()
     .min(6, "Le mot de passe doit contenir au moins 6 caractères"),
   nom: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  role: z.enum(["admin", "client"], {
+  role: z.enum(["admin", "employe", "client"], {
     required_error: "Veuillez sélectionner un rôle",
   }),
 });
@@ -141,6 +141,7 @@ export default function CreateUserDialog() {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="admin">Administrateur</SelectItem>
+                      <SelectItem value="employe">Collaborateur</SelectItem>
                       <SelectItem value="client">Client</SelectItem>
                     </SelectContent>
                   </Select>

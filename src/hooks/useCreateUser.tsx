@@ -6,7 +6,7 @@ interface CreateUserData {
   email: string;
   password: string;
   nom: string;
-  role: "admin" | "client";
+  role: "admin" | "employe" | "client";
 }
 
 export function useCreateUser() {
