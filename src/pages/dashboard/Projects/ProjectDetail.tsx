@@ -6,9 +6,10 @@ import {
   X,
   Upload,
   Calendar,
-  // Users,
   FileText,
   PlusCircle,
+  Pencil,
+  Save,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,33 +18,55 @@ import { Projet } from "./ProjectListView";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProjectComments } from "@/hooks/useProjectComments";
 import { useProjectUsers } from "@/hooks/useProjectUsers";
-import { useProjects } from "@/hooks/useProjects";
+import { useProjectDetail } from "@/hooks/useProjectDetail";
 import { Skeleton } from "@/components/ui/skeleton";
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { formatDistanceToNow } from "date-fns";
+import { useRole } from "@/hooks/useRole";
 
 interface ProjectDetailProps {
   project: Projet;
 }
 
-export default function ProjectDetail({ project }: ProjectDetailProps) {
+export default function ProjectDetail({
+  project: initialProject,
+}: ProjectDetailProps) {
   const [showActivity, setShowActivity] = useState(true);
   const [newComment, setNewComment] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(initialProject.title);
+  const [editedDescription, setEditedDescription] = useState(
+    initialProject.description || ""
+  );
+
+  const { isAdmin } = useRole();
+  const { project, loading, updateProject } = useProjectDetail(
+    initialProject.id
+  );
   const {
     comments,
     loading: commentsLoading,
     addComment,
-  } = useProjectComments(project.id);
+  } = useProjectComments(initialProject.id);
   const { users: projectUsers, loading: usersLoading } = useProjectUsers(
-    project.id
+    initialProject.id
   );
-  const { updateProject } = useProjects();
 
   const handleStatusChange = async (newStatus: Projet["status"]) => {
     try {
-      await updateProject(project.id, { status: newStatus });
+      await updateProject({ status: newStatus });
     } catch (error) {
       console.error("Erreur lors de la mise à jour du statut:", error);
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      await updateProject({
+        title: editedTitle,
+        description: editedDescription,
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du projet:", error);
     }
   };
 
@@ -66,7 +89,7 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
     }
   };
 
-  if (commentsLoading || usersLoading) {
+  if (loading || commentsLoading || usersLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-[200px]" />
@@ -75,17 +98,58 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
     );
   }
 
+  const currentProject = project || initialProject;
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="flex">
         {/* Main Content */}
         <div className={cn("flex-1", showActivity ? "mr-[400px]" : "")}>
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">{project.title}</h1>
-            <ProjectStatusDot
-              project={project}
-              onStatusChange={handleStatusChange}
-            />
+            {isEditing ? (
+              <div className="flex-1 space-y-2">
+                <Input
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  className="text-2xl font-bold"
+                />
+                <Input
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  placeholder="Description du projet"
+                />
+              </div>
+            ) : (
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold">{currentProject.title}</h1>
+                {currentProject.description && (
+                  <p className="text-gray-600 mt-2">
+                    {currentProject.description}
+                  </p>
+                )}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() =>
+                    isEditing ? handleSaveChanges() : setIsEditing(true)
+                  }
+                >
+                  {isEditing ? (
+                    <Save className="h-4 w-4" />
+                  ) : (
+                    <Pencil className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+              <ProjectStatusDot
+                project={currentProject}
+                onStatusChange={handleStatusChange}
+              />
+            </div>
           </div>
 
           <div className="grid gap-6">
@@ -98,7 +162,9 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
                     <div>
                       <p className="text-sm text-gray-500">Date de création</p>
                       <p className="font-medium">
-                        {new Date(project.created_at).toLocaleDateString()}
+                        {new Date(
+                          currentProject.created_at
+                        ).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -106,7 +172,7 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
                     <FileText className="h-5 w-5 text-gray-500" />
                     <div>
                       <p className="text-sm text-gray-500">Type</p>
-                      <p className="font-medium">{project.type}</p>
+                      <p className="font-medium">{currentProject.type}</p>
                     </div>
                   </div>
                 </div>
@@ -163,24 +229,6 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
             <ScrollArea className="flex-1 p-4">
               {comments.map((comment) => (
                 <div key={comment.id} className="mb-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    {/* <Avatar className="h-6 w-6">
-                      <AvatarImage
-                        src={`https://avatar.vercel.sh/${comment.author.email}`}
-                      />
-                      <AvatarFallback>
-                        {comment.author.full_name[0]}
-                      </AvatarFallback>
-                    </Avatar> */}
-                    {/* <span className="font-semibold">
-                      {comment.author.full_name}
-                    </span> */}
-                    {/* <span className="text-sm text-gray-500">
-                      {formatDistanceToNow(new Date(comment.created_at), {
-                        addSuffix: true,
-                      })}
-                    </span> */}
-                  </div>
                   <p className="text-gray-700">{comment.content}</p>
                 </div>
               ))}

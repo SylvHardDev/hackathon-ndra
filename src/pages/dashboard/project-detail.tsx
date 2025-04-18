@@ -1,24 +1,34 @@
 import { useParams } from "react-router-dom";
 import ProjectDetail from "./Projects/ProjectDetail";
 import { Projet } from "./Projects/ProjectListView";
+import { useProjectDetail } from "@/hooks/useProjectDetail";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Exemple de données simulées pour le développement
 const dummyProject: Projet = {
   id: 1,
-  titre: "Projet Alpha",
-  statut: "open",
-  collaborateur: "Alice",
-  client: "Client A",
+  title: "Projet Alpha",
+  status: "open",
   type: "video",
-  dateDebut: "16 janv. 2024",
+  created_at: new Date().toISOString(),
 };
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
+  const { project, loading } = useProjectDetail(Number(id));
 
-  // TODO: Récupérer les données du projet depuis l'API en utilisant l'ID
-  // Pour l'instant, on utilise des données simulées
-  const project = dummyProject;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-[200px]" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
+
+  if (!project) {
+    return <div>Projet non trouvé</div>;
+  }
 
   return <ProjectDetail project={project} />;
 }

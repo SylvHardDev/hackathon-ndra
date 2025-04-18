@@ -24,8 +24,7 @@ export function useProjectUsers(projectId: number) {
         .select(
           `
           project_id,
-          account_id,
-          account:accounts (
+          account:accounts!project_account_account_id_fkey (
             id,
             email,
             full_name,

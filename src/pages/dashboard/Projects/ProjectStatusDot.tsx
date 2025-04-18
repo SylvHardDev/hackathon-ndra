@@ -26,37 +26,37 @@ const statusConfigs: Record<Projet["status"], StatusConfig> = {
   open: {
     label: "Ouvert",
     color: "#640564",
-    bgColor: "rgba(100, 5, 100, 0.1)",
+    bgColor: "rgba(100, 5, 100, 0.5)",
     borderColor: "#d0e2f7",
   },
   in_realisation: {
     label: "En réalisation",
     color: "#2684ff",
-    bgColor: "rgba(38, 132, 255, 0.1)",
+    bgColor: "rgba(38, 132, 255, 0.5)",
     borderColor: "#d0e2f7",
   },
   in_validation: {
     label: "En validation",
     color: "#ffab00",
-    bgColor: "rgba(255, 171, 0, 0.1)",
+    bgColor: "rgba(255, 171, 0, 0.5)",
     borderColor: "#ffecb3",
   },
   validate: {
     label: "Validé",
     color: "#00c800",
-    bgColor: "rgba(0, 200, 0, 0.1)",
+    bgColor: "rgba(0, 200, 0, 0.5)",
     borderColor: "#dfe1e6",
   },
   need_revision: {
     label: "Modification demandée",
     color: "#ff5630",
-    bgColor: "rgba(255, 86, 48, 0.1)",
+    bgColor: "rgba(255, 86, 48, 0.5)",
     borderColor: "#ffd6cc",
   },
   closed: {
     label: "Fermé",
     color: "#00f500",
-    bgColor: "rgba(0, 245, 0, 0.1)",
+    bgColor: "rgba(0, 245, 0, 0.5)",
     borderColor: "#dfe1e6",
   },
 };
