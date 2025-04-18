@@ -9,14 +9,19 @@ import {
 } from "@/components/ui/select";
 import CreateProjectDialog from "./CreateProjectDialog";
 import ProjectListView from "./Projects/ProjectListView";
+import { useRole } from "@/hooks/useRole";
 
 export function ProjectManagement() {
+  const { isAdmin } = useRole();
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Gestion des projets</h1>
-        <CreateProjectDialog />
-      </div>
+      {isAdmin && (
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Gestion des projets</h1>
+          <CreateProjectDialog />
+        </div>
+      )}
 
       <div className="flex items-center space-x-2">
         <div className="relative flex-1">

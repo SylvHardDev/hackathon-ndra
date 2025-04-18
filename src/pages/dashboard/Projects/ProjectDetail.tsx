@@ -6,7 +6,7 @@ import {
   X,
   Upload,
   Calendar,
-  Users,
+  // Users,
   FileText,
   PlusCircle,
 } from "lucide-react";
@@ -15,13 +15,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Projet } from "./ProjectListView";
 import { Card, CardContent } from "@/components/ui/card";
-
-interface Comment {
-  id: string;
-  author: string;
-  content: string;
-  timestamp: string;
-}
+import { useProjectComments } from "@/hooks/useProjectComments";
+import { useProjectUsers } from "@/hooks/useProjectUsers";
+import { useProjects } from "@/hooks/useProjects";
+import { Skeleton } from "@/components/ui/skeleton";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { formatDistanceToNow } from "date-fns";
 
 interface ProjectDetailProps {
   project: Projet;
@@ -30,27 +29,33 @@ interface ProjectDetailProps {
 export default function ProjectDetail({ project }: ProjectDetailProps) {
   const [showActivity, setShowActivity] = useState(true);
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "1",
-      author: "John Doe",
-      content: "Voici un commentaire sur le projet",
-      timestamp: "16 janv. à 11:25 am",
-    },
-  ]);
+  const {
+    comments,
+    loading: commentsLoading,
+    addComment,
+  } = useProjectComments(project.id);
+  const { users: projectUsers, loading: usersLoading } = useProjectUsers(
+    project.id
+  );
+  const { updateProject } = useProjects();
 
-  const handleSendComment = () => {
+  const handleStatusChange = async (newStatus: Projet["status"]) => {
+    try {
+      await updateProject(project.id, { status: newStatus });
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du statut:", error);
+    }
+  };
+
+  const handleSendComment = async () => {
     if (!newComment.trim()) return;
 
-    const comment: Comment = {
-      id: Date.now().toString(),
-      author: "Utilisateur actuel",
-      content: newComment,
-      timestamp: new Date().toLocaleString("fr-FR"),
-    };
-
-    setComments([...comments, comment]);
-    setNewComment("");
+    try {
+      await addComment(newComment);
+      setNewComment("");
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du commentaire:", error);
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,14 +66,26 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
     }
   };
 
+  if (commentsLoading || usersLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-[200px]" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="flex">
         {/* Main Content */}
         <div className={cn("flex-1", showActivity ? "mr-[400px]" : "")}>
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">{project.titre}</h1>
-            <ProjectStatusDot project={project} />
+            <h1 className="text-2xl font-bold">{project.title}</h1>
+            <ProjectStatusDot
+              project={project}
+              onStatusChange={handleStatusChange}
+            />
           </div>
 
           <div className="grid gap-6">
@@ -79,17 +96,10 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-gray-500" />
                     <div>
-                      <p className="text-sm text-gray-500">Date de début</p>
+                      <p className="text-sm text-gray-500">Date de création</p>
                       <p className="font-medium">
-                        {project.dateDebut || "Non définie"}
+                        {new Date(project.created_at).toLocaleDateString()}
                       </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <p className="text-sm text-gray-500">Client</p>
-                      <p className="font-medium">{project.client}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -97,13 +107,6 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
                     <div>
                       <p className="text-sm text-gray-500">Type</p>
                       <p className="font-medium">{project.type}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <p className="text-sm text-gray-500">Collaborateur</p>
-                      <p className="font-medium">{project.collaborateur}</p>
                     </div>
                   </div>
                 </div>
@@ -161,10 +164,22 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
               {comments.map((comment) => (
                 <div key={comment.id} className="mb-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold">{comment.author}</span>
-                    <span className="text-sm text-gray-500">
-                      {comment.timestamp}
-                    </span>
+                    {/* <Avatar className="h-6 w-6">
+                      <AvatarImage
+                        src={`https://avatar.vercel.sh/${comment.author.email}`}
+                      />
+                      <AvatarFallback>
+                        {comment.author.full_name[0]}
+                      </AvatarFallback>
+                    </Avatar> */}
+                    {/* <span className="font-semibold">
+                      {comment.author.full_name}
+                    </span> */}
+                    {/* <span className="text-sm text-gray-500">
+                      {formatDistanceToNow(new Date(comment.created_at), {
+                        addSuffix: true,
+                      })}
+                    </span> */}
                   </div>
                   <p className="text-gray-700">{comment.content}</p>
                 </div>

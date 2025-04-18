@@ -5,7 +5,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 export default function AuthLayout() {
   const { userStatus } = useAuth();
   const { isAdmin, isLoading } = useRole();
-  const location = useLocation();
+  // const location = useLocation();
   const accessToken = localStorage.getItem("token");
   const refreshToken = localStorage.getItem("refresh_token");
 
@@ -21,23 +21,23 @@ export default function AuthLayout() {
     );
   }
 
-  const isDashboardRoute =
-    location.pathname.startsWith("/dashboard") ||
-    location.pathname.startsWith("/users") ||
-    location.pathname.startsWith("/projects") ||
-    location.pathname.startsWith("/profiledashboard");
+  // const isDashboardRoute =
+  //   location.pathname.startsWith("/dashboard") ||
+  //   location.pathname.startsWith("/users") ||
+  //   location.pathname.startsWith("/projects") ||
+  //   location.pathname.startsWith("/profiledashboard");
 
-  if (isDashboardRoute && !isAdmin) {
-    return <Navigate to="/user-profile" replace />;
-  }
+  // if (isDashboardRoute && !isAdmin) {
+  //   return <Navigate to="/user-profile" replace />;
+  // }
 
-  if (
-    !isAdmin &&
-    location.pathname !== "/user-profile" &&
-    location.pathname !== "/reset-password"
-  ) {
-    return <Navigate to="/user-profile" replace />;
-  }
+  // if (
+  //   !isAdmin &&
+  //   location.pathname !== "/user-profile" &&
+  //   location.pathname !== "/reset-password"
+  // ) {
+  //   return <Navigate to="/user-profile" replace />;
+  // }
 
   return (
     <>

@@ -17,25 +17,84 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CreateProjectDialog() {
+  const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [projectType, setProjectType] = useState("image");
+  const [projectType, setProjectType] = useState<"design" | "video">("design");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Ici, tu pourrais intégrer la logique pour créer le projet dans ta base de données.
-    console.log({ title, description, projectType });
+
+    setIsLoading(true);
+    try {
+      // Création du projet
+      const { data: project, error: projectError } = await supabase
+        .from("project")
+        .insert([
+          {
+            title,
+            description,
+            type: projectType,
+            status: "open",
+          },
+        ])
+        .select("id")
+        .single();
+
+      if (projectError || !project) throw projectError;
+
+      // Assignation de l'utilisateur courant au projet
+      const { error: assignError } = await supabase
+        .from("project_account")
+        .insert([
+          {
+            project_id: project.id,
+          },
+        ]);
+
+      if (assignError) throw assignError;
+
+      toast({
+        title: "Succès",
+        description: "Le projet a été créé avec succès.",
+      });
+
+      // Réinitialisation et fermeture
+      setTitle("");
+      setDescription("");
+      setProjectType("design");
+      setOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Erreur",
+        description:
+          (error as Error).message || "Impossible de créer le projet.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button
+          variant="outline"
+          onClick={() => setOpen(true)}
+          className="flex items-center"
+        >
           <Plus className="mr-2 h-4 w-4" />
-          New Project
+          Nouveau projet
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
@@ -55,6 +114,7 @@ export default function CreateProjectDialog() {
               placeholder="Entrez le titre du projet"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              disabled={isLoading}
               required
             />
           </div>
@@ -68,6 +128,7 @@ export default function CreateProjectDialog() {
               placeholder="Description du projet"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              disabled={isLoading}
               required
             />
           </div>
@@ -75,19 +136,28 @@ export default function CreateProjectDialog() {
             <Label htmlFor="project-type" className="mb-2">
               Type de projet
             </Label>
-            <Select value={projectType} onValueChange={setProjectType}>
+            <Select
+              value={projectType}
+              onValueChange={(value) =>
+                setProjectType(value as "design" | "video")
+              }
+              disabled={isLoading}
+            >
               <SelectTrigger className="w-1/2">
                 <SelectValue placeholder="Choisissez un type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="image">Design</SelectItem>
+                <SelectItem value="design">Design</SelectItem>
                 <SelectItem value="video">Vidéo</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <DialogFooter>
-            <Button type="submit" className="w-full">
-              Créer le projet
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              <span>{isLoading ? "Création..." : "Créer le projet"}</span>
             </Button>
           </DialogFooter>
         </form>
