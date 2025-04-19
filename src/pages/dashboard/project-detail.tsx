@@ -11,6 +11,7 @@ const dummyProject: Projet = {
   status: "open",
   type: "video",
   created_at: new Date().toISOString(),
+  description: "Description du projet Alpha",
 };
 
 export default function ProjectDetailPage() {

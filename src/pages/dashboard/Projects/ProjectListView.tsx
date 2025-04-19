@@ -12,6 +12,8 @@ import ProjectStatusDot from "./ProjectStatusDot";
 import { Link } from "react-router-dom";
 import { useProjects } from "@/hooks/useProjects";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMyAssignedProjectIds } from "@/hooks/useMyAssignedProjectIds";
+import { useRole } from "@/hooks/useRole";
 
 export type ProjectType = "video" | "design";
 
@@ -28,14 +30,23 @@ export interface Projet {
     | "closed";
   type: ProjectType;
   created_at: string;
+  description: string;
 }
 
 export default function ProjectListView() {
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
-  const { projects, loading, updateProject } = useProjects();
+  const { projects, loading: projectsLoading, updateProject } = useProjects();
+  const { assignedIds, loading: assignmentsLoading } =
+    useMyAssignedProjectIds();
+  const { isAdmin } = useRole();
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
     null
   );
+
+  // Filtrer les projets selon le rôle
+  const filteredProjects = isAdmin
+    ? projects // L'admin voit tous les projets
+    : projects.filter((project) => assignedIds.includes(project.id)); // Les autres utilisateurs ne voient que leurs projets assignés
 
   const handleStatusChange = async (
     projectId: number,
@@ -48,7 +59,7 @@ export default function ProjectListView() {
     }
   };
 
-  if (loading) {
+  if (projectsLoading || (!isAdmin && assignmentsLoading)) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-[200px]" />
@@ -92,7 +103,7 @@ export default function ProjectListView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
+              {filteredProjects.map((project) => (
                 <TableRow
                   key={project.id}
                   className="hover:bg-gray-50/2"

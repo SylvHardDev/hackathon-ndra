@@ -10,6 +10,7 @@ import {
   PlusCircle,
   Pencil,
   Save,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,6 +22,8 @@ import { useProjectUsers } from "@/hooks/useProjectUsers";
 import { useProjectDetail } from "@/hooks/useProjectDetail";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/hooks/useRole";
+import { useProjectAssignments } from "@/hooks/useProjectAssignments";
+import AssignUsersDialog from "./AssignUsersDialog";
 
 interface ProjectDetailProps {
   project: Projet;
@@ -48,6 +51,14 @@ export default function ProjectDetail({
   } = useProjectComments(initialProject.id);
   const { users: projectUsers, loading: usersLoading } = useProjectUsers(
     initialProject.id
+  );
+  const {
+    allAccounts,
+    assignedIds,
+    loading: assignmentsLoading,
+  } = useProjectAssignments(initialProject.id);
+  const assignedUsers = allAccounts.filter((acct) =>
+    assignedIds.includes(acct.id)
   );
 
   const handleStatusChange = async (newStatus: Projet["status"]) => {
@@ -89,7 +100,7 @@ export default function ProjectDetail({
     }
   };
 
-  if (loading || commentsLoading || usersLoading) {
+  if (loading || commentsLoading || usersLoading || assignmentsLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-[200px]" />
@@ -155,7 +166,47 @@ export default function ProjectDetail({
           <div className="grid gap-6">
             {/* Informations principales */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-6 flex justify-between">
+                <div>
+                  <div className="flex justify-between items-center mb-4 gap-10">
+                    <h3 className="text-lg font-semibold">
+                      Utilisateurs assignés
+                    </h3>
+                    {isAdmin && (
+                      <div>
+                        <AssignUsersDialog projectId={currentProject.id} />
+                      </div>
+                    )}
+                  </div>
+                  {assignmentsLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {assignedUsers.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center justify-between p-2 hover:bg-gray-50/5 rounded"
+                        >
+                          <div>
+                            <p className="font-medium">{user.nom}</p>
+                            {/* <p className="text-sm text-gray-500">{user.email}</p> */}
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {user.role}
+                          </span>
+                        </div>
+                      ))}
+                      {assignedUsers.length === 0 && (
+                        <p className="text-gray-500 text-center py-4">
+                          Aucun utilisateur assigné
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-6">
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-gray-500" />

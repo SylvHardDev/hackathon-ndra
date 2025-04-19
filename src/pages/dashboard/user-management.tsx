@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useRole } from "@/hooks/useRole";
 
 interface User {
   id: number;
@@ -30,6 +31,7 @@ interface User {
 }
 
 export function UserManagement() {
+  const { isAdmin } = useRole();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -135,6 +137,7 @@ export function UserManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Gestion des utilisateurs</h1>
+        {isAdmin && <CreateUserDialog />}
       </div>
 
       <div className="flex items-center space-x-2">
