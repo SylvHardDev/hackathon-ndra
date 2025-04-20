@@ -7,10 +7,10 @@ import {
   Upload,
   Calendar,
   FileText,
-  PlusCircle,
   Pencil,
   Save,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,12 +20,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useProjectComments } from "@/hooks/useProjectComments";
 import { useProjectUsers } from "@/hooks/useProjectUsers";
 import { useProjectDetail } from "@/hooks/useProjectDetail";
+import { useProjectMedia } from "@/hooks/useProjectMedia";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/hooks/useRole";
 import { useProjectAssignments } from "@/hooks/useProjectAssignments";
 import AssignUsersDialog from "./AssignUsersDialog";
 import RemoveUserDialog from "./RemoveUserDialog";
 import DeleteProjectDialog from "./DeleteProjectDialog";
+import { toast } from "sonner";
 
 interface ProjectDetailProps {
   project: Projet;
@@ -51,24 +53,31 @@ export default function ProjectDetail({
     loading: commentsLoading,
     addComment,
   } = useProjectComments(initialProject.id);
-  const { users: projectUsers, loading: usersLoading } = useProjectUsers(
-    initialProject.id
-  );
+  const { loading: usersLoading } = useProjectUsers(initialProject.id);
   const {
     allAccounts,
     assignedIds,
     loading: assignmentsLoading,
-    refetch: refetchAssignments,
+    updateAssignments,
   } = useProjectAssignments(initialProject.id);
   const assignedUsers = allAccounts.filter((acct) =>
     assignedIds.includes(acct.id)
   );
 
+  const {
+    media,
+    loading: mediaLoading,
+    uploadMedia,
+    deleteMedia,
+  } = useProjectMedia(initialProject.id);
+
   const handleStatusChange = async (newStatus: Projet["status"]) => {
     try {
       await updateProject({ status: newStatus });
+      toast.success("Statut du projet mis à jour avec succès");
     } catch (error) {
       console.error("Erreur lors de la mise à jour du statut:", error);
+      toast.error("Erreur lors de la mise à jour du statut");
     }
   };
 
@@ -79,8 +88,10 @@ export default function ProjectDetail({
         description: editedDescription,
       });
       setIsEditing(false);
+      toast.success("Projet mis à jour avec succès");
     } catch (error) {
       console.error("Erreur lors de la mise à jour du projet:", error);
+      toast.error("Erreur lors de la mise à jour du projet");
     }
   };
 
@@ -90,20 +101,48 @@ export default function ProjectDetail({
     try {
       await addComment(newComment);
       setNewComment("");
+      toast.success("Commentaire ajouté avec succès");
     } catch (error) {
       console.error("Erreur lors de l'ajout du commentaire:", error);
+      toast.error("Erreur lors de l'ajout du commentaire");
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = event.target.files;
-    if (files) {
-      // Gérer l'upload des fichiers ici
-      console.log("Fichiers à uploader:", files);
+    if (!files || files.length === 0) return;
+
+    try {
+      for (const file of Array.from(files)) {
+        await uploadMedia(file, project?.type as "video" | "design");
+      }
+      toast.success("Média(s) uploadé(s) avec succès");
+    } catch (error) {
+      console.error("Erreur lors de l'upload:", error);
+      toast.error("Erreur lors de l'upload des médias");
     }
   };
 
-  if (loading || commentsLoading || usersLoading || assignmentsLoading) {
+  const handleDeleteMedia = async (mediaId: number) => {
+    try {
+      await deleteMedia(mediaId);
+      toast.success("Fichier supprimé avec succès");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Erreur lors de la suppression"
+      );
+    }
+  };
+
+  if (
+    loading ||
+    commentsLoading ||
+    usersLoading ||
+    assignmentsLoading ||
+    mediaLoading
+  ) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-[200px]" />
@@ -209,7 +248,7 @@ export default function ProjectDetail({
                               projectId={currentProject.id}
                               userId={user.id}
                               userName={user.nom}
-                              onSuccess={refetchAssignments}
+                              onSuccess={() => updateAssignments(assignedIds)}
                             />
                           )}
                         </div>
@@ -246,33 +285,81 @@ export default function ProjectDetail({
               </CardContent>
             </Card>
 
-            {/* Section Upload - visible uniquement pour les employés */}
-            {isCollab && (
-              <Card>
-                <CardContent className="">
-                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload className="h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium mb-2">
-                      Déposez vos fichiers ici
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-4">ou</p>
-                    <label className="cursor-pointer">
-                      <Input
-                        type="file"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                        multiple
-                        accept="image/*,video/*"
-                      />
-                      <Button variant="outline">
-                        <PlusCircle className="h-4 w-4 mr-2" />
-                        Sélectionner des fichiers
-                      </Button>
-                    </label>
+            {/* Section Médias */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Médias du projet</h3>
+
+                {mediaLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="animate-spin" />
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {media.map((item) => (
+                      <div
+                        key={item.id}
+                        className="relative group w-full aspect-video"
+                      >
+                        {item.media_type === "video" ? (
+                          <video
+                            src={item.url}
+                            className="w-full h-full object-cover rounded-lg"
+                            controls
+                          />
+                        ) : (
+                          <img
+                            src={item.url}
+                            alt="Media"
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        )}
+                        {isAdmin && (
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeleteMedia(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {media.length === 0 && (
+                      <p className="text-gray-500 text-center col-span-full py-4">
+                        Aucun média pour ce projet
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {isCollab && (
+                  <div className="mt-4 flex flex-col gap-2">
+                    <Input
+                      type="file"
+                      className="hidden"
+                      id="file-upload"
+                      multiple
+                      accept={
+                        currentProject.type === "video" ? "video/*" : "image/*"
+                      }
+                      onChange={handleFileUpload}
+                    />
+                    <Button
+                      variant="outline"
+                      className="w-full cursor-pointer"
+                      onClick={() =>
+                        document.getElementById("file-upload")?.click()
+                      }
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Uploader
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
 
