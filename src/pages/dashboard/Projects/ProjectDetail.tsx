@@ -42,7 +42,7 @@ export default function ProjectDetail({
     initialProject.description || ""
   );
 
-  const { isAdmin, role } = useRole();
+  const { isAdmin, isCollab } = useRole();
   const { project, loading, updateProject } = useProjectDetail(
     initialProject.id
   );
@@ -247,7 +247,7 @@ export default function ProjectDetail({
             </Card>
 
             {/* Section Upload - visible uniquement pour les employés */}
-            {role === "employe" && (
+            {isCollab && (
               <Card>
                 <CardContent className="">
                   <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
