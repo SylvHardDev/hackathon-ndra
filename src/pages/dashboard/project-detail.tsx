@@ -1,18 +1,7 @@
 import { useParams } from "react-router-dom";
 import ProjectDetail from "./Projects/ProjectDetail";
-import { Projet } from "./Projects/ProjectListView";
 import { useProjectDetail } from "@/hooks/useProjectDetail";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Exemple de données simulées pour le développement
-const dummyProject: Projet = {
-  id: 1,
-  title: "Projet Alpha",
-  status: "open",
-  type: "video",
-  created_at: new Date().toISOString(),
-  description: "Description du projet Alpha",
-};
 
 export default function ProjectDetailPage() {
   const { id } = useParams();

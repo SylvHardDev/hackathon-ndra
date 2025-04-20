@@ -1,6 +1,7 @@
 // src/hooks/useCommentProject.ts
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 export interface ProjectComment {
   id: number;
@@ -56,61 +57,48 @@ export function useCommentProject(projectId: number) {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'project_comment',
           filter: `project_id=eq.${projectId}`,
         },
-        async (payload) => {
-          const { data: newComment, error } = await supabase
+        async (payload: RealtimePostgresChangesPayload<ProjectComment>) => {
+          const newComment = payload.new as ProjectComment;
+          if (!newComment?.id) return;
+          
+          const { data: comment, error } = await supabase
             .from('project_comment')
             .select(`
               *,
               author:accounts(id, nom)
             `)
-            .eq('id', payload.new.id)
+            .eq('id', newComment.id)
             .single();
 
-          if (!error && newComment) {
-            setComments((prev) => [...prev, newComment]);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'project_comment',
-          filter: `project_id=eq.${projectId}`,
-        },
-        async (payload) => {
-          const { data: updatedComment, error } = await supabase
-            .from('project_comment')
-            .select(`
-              *,
-              author:accounts(id, nom)
-            `)
-            .eq('id', payload.new.id)
-            .single();
+          if (error) return;
 
-          if (!error && updatedComment) {
-            setComments((prev) =>
-              prev.map((c) => (c.id === updatedComment.id ? updatedComment : c))
-            );
+          switch (payload.eventType) {
+            case 'INSERT':
+              if (!comment.is_deleted) {
+                setComments((prev) => [...prev, comment]);
+              }
+              break;
+            case 'UPDATE':
+              if (comment.is_deleted) {
+                setComments((prev) => prev.filter((c) => c.id !== comment.id));
+              } else {
+                setComments((prev) =>
+                  prev.map((c) => (c.id === comment.id ? comment : c))
+                );
+              }
+              break;
+            case 'DELETE':
+              const oldComment = payload.old as ProjectComment;
+              if (oldComment?.id) {
+                setComments((prev) => prev.filter((c) => c.id !== oldComment.id));
+              }
+              break;
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'project_comment',
-          filter: `project_id=eq.${projectId}&is_deleted=eq.true`,
-        },
-        ({ new: deleted }) => {
-          setComments(prev => prev.filter(c => c.id !== deleted.id));
         }
       )
       .subscribe();

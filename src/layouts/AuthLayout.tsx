@@ -5,7 +5,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 export default function AuthLayout() {
   const { userStatus } = useAuth();
   const { isAdmin, isLoading } = useRole();
-  // const location = useLocation();
+  const location = useLocation();
   const accessToken = localStorage.getItem("token");
   const refreshToken = localStorage.getItem("refresh_token");
 
