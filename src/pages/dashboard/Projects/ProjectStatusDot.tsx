@@ -9,6 +9,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useProjects } from "@/hooks/useProjects";
+import { useRole } from "@/hooks/useRole";
 
 interface ProjectStatusDotProps {
   project: Projet;
@@ -61,7 +62,18 @@ const statusConfigs: Record<Projet["status"], StatusConfig> = {
   },
 };
 
-const availableStatuses = Object.keys(statusConfigs) as Projet["status"][];
+const getAvailableStatuses = (role: string | null): Projet["status"][] => {
+  switch (role) {
+    case "admin":
+      return ["open", "closed"];
+    case "employe":
+      return ["in_realisation", "in_validation"];
+    case "client":
+      return ["validate", "need_revision"];
+    default:
+      return [];
+  }
+};
 
 export default function ProjectStatusDot({
   project,
@@ -69,7 +81,9 @@ export default function ProjectStatusDot({
 }: ProjectStatusDotProps) {
   const [status, setStatus] = useState<Projet["status"]>(project.status);
   const { updateProject } = useProjects();
+  const { userRole } = useRole();
   const currentConfig = statusConfigs[status];
+  const availableStatuses = getAvailableStatuses(userRole);
 
   const handleStatusChange = async (newStatus: Projet["status"]) => {
     try {
