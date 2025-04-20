@@ -56,7 +56,7 @@ export default function ProjectDetail({
     type: string;
   } | null>(null);
 
-  const { isAdmin, isCollab } = useRole();
+  const { isAdmin, isCollab, isClient } = useRole();
   const { project, loading, updateProject } = useProjectDetail(
     initialProject.id
   );
@@ -360,6 +360,7 @@ export default function ProjectDetail({
                           <Button
                             variant="secondary"
                             size="icon"
+                            className="cursor-pointer"
                             onClick={() =>
                               setSelectedMedia({
                                 url: item.url,
@@ -369,10 +370,11 @@ export default function ProjectDetail({
                           >
                             <Maximize2 className="h-4 w-4" />
                           </Button>
-                          {item.media_type === "video" && (
+                          {item.media_type === "video" && isClient && (
                             <Button
                               variant="secondary"
                               size="icon"
+                              className="cursor-pointer"
                               onClick={() =>
                                 (window.location.href = `/dashboard/projects/${project?.id}/video-edit`)
                               }
@@ -380,10 +382,12 @@ export default function ProjectDetail({
                               <Edit className="h-4 w-4" />
                             </Button>
                           )}
+
                           {isCollab && (
                             <Button
                               variant="destructive"
                               size="icon"
+                              className="cursor-pointer"
                               onClick={() => handleDeleteMedia(item.id)}
                             >
                               <Trash2 className="h-4 w-4" />
