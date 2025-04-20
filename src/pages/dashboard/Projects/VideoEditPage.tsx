@@ -15,8 +15,10 @@ import { useProjectMedia } from "@/hooks/useProjectMedia";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRole } from "@/hooks/useRole";
 
 export default function VideoEditPage() {
+  const { isClient } = useRole();
   const { projectId } = useParams<{ projectId: string }>();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -140,17 +142,22 @@ export default function VideoEditPage() {
               onPlay={handlePlay}
               onPause={handlePause}
             />
-            {isPaused && (
-              <Button
-                variant="secondary"
-                size="sm"
-                className="absolute top-2 right-2 bg-white/5 hover:bg-white hover:text-black transition-all duration-300 cursor-pointer "
-                onClick={() => setShowCommentModal(true)}
-              >
-                <MessageSquarePlus className="h-4 w-4 mr-2" />
-                Ajouter un commentaire
-              </Button>
+            {isClient && (
+              <div>
+                {isPaused && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="absolute top-2 right-2 bg-white/5 hover:bg-white hover:text-black transition-all duration-300 cursor-pointer "
+                    onClick={() => setShowCommentModal(true)}
+                  >
+                    <MessageSquarePlus className="h-4 w-4 mr-2" />
+                    Ajouter un commentaire
+                  </Button>
+                )}
+              </div>
             )}
+
             {showCommentModal && (
               <Dialog
                 open={showCommentModal}
@@ -234,29 +241,31 @@ export default function VideoEditPage() {
                         <p className="mt-1">{comment.content}</p>
                       )}
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingComment(comment.id);
-                          setEditContent(comment.content);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteComment(comment.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {isClient && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingComment(comment.id);
+                            setEditContent(comment.content);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteComment(comment.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

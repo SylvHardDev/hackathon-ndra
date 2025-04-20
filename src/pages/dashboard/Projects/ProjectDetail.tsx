@@ -13,6 +13,7 @@ import {
   Trash2,
   Maximize2,
   Edit,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -382,7 +383,18 @@ export default function ProjectDetail({
                               <Edit className="h-4 w-4" />
                             </Button>
                           )}
-
+                          {(isAdmin || isCollab) && (
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="cursor-pointer"
+                              onClick={() =>
+                                (window.location.href = `/dashboard/projects/${project?.id}/video-edit`)
+                              }
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
                           {isCollab && (
                             <Button
                               variant="destructive"
