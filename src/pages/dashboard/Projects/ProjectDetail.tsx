@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import ProjectStatusDot from "./ProjectStatusDot";
 import {
@@ -38,6 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import useAuth from "@/hooks/useAuth";
 
 interface ProjectDetailProps {
   project: Projet;
@@ -49,15 +50,30 @@ interface CommentProps {
 }
 
 function CommentItem({ comment, onReply }: CommentProps) {
+  const { user } = useAuth();
+  const isCurrentUser = user?.id === comment.author?.id;
+
   return (
-    <div className="flex gap-3 mb-4 group">
+    <div
+      className={cn(
+        "flex gap-3 mb-4 group",
+        isCurrentUser ? "flex-row-reverse" : ""
+      )}
+    >
       <div className="flex-shrink-0">
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
           {comment.author?.nom?.charAt(0) || "?"}
         </div>
       </div>
-      <div className="flex-1">
-        <div className="bg-secondary/20 rounded-lg p-3">
+      <div className={cn("flex-1", isCurrentUser ? "text-right" : "")}>
+        <div
+          className={cn(
+            "rounded-lg p-3",
+            isCurrentUser
+              ? "bg-primary text-primary-foreground border border-red-500"
+              : "bg-secondary/20"
+          )}
+        >
           <div className="flex items-center justify-between mb-1">
             <span className="font-medium">{comment.author?.nom}</span>
             <span className="text-xs text-gray-500">
@@ -95,6 +111,8 @@ export default function ProjectDetail({
     type: string;
   } | null>(null);
   const [replyToId, setReplyToId] = useState<number | null>(null);
+  const [isSendingComment, setIsSendingComment] = useState(false);
+  const commentsEndRef = useRef<HTMLDivElement>(null);
 
   const { isAdmin, isCollab, isClient } = useRole();
   const { project, loading, updateProject } = useProjectDetail(
@@ -147,9 +165,18 @@ export default function ProjectDetail({
     }
   };
 
-  const handleSendComment = async () => {
-    if (!newComment.trim()) return;
+  const scrollToBottom = () => {
+    commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [comments]);
+
+  const handleSendComment = async () => {
+    if (!newComment.trim() || isSendingComment) return;
+
+    setIsSendingComment(true);
     try {
       console.log("Tentative d'envoi du commentaire:", {
         content: newComment,
@@ -166,6 +193,11 @@ export default function ProjectDetail({
       setNewComment("");
       setReplyToId(null);
       toast.success("Commentaire ajouté avec succès");
+
+      // Forcer le défilement après l'ajout d'un nouveau commentaire
+      setTimeout(() => {
+        commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     } catch (error) {
       console.error("Erreur détaillée lors de l'ajout du commentaire:", error);
       toast.error(
@@ -173,6 +205,8 @@ export default function ProjectDetail({
           ? error.message
           : "Erreur lors de l'ajout du commentaire"
       );
+    } finally {
+      setIsSendingComment(false);
     }
   };
 
@@ -560,6 +594,7 @@ export default function ProjectDetail({
                   Aucun commentaire pour le moment
                 </div>
               )}
+              <div ref={commentsEndRef} />
             </ScrollArea>
 
             <div className="p-4 border-t">
@@ -590,10 +625,18 @@ export default function ProjectDetail({
                   }
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendComment();
+                    }
+                  }}
                 />
-                <Button onClick={handleSendComment}>
-                  {loading ? (
+                <Button
+                  onClick={handleSendComment}
+                  disabled={isSendingComment || !newComment.trim()}
+                >
+                  {isSendingComment ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     "Envoyer"
