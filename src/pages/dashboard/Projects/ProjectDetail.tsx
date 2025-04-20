@@ -11,6 +11,7 @@ import {
   Save,
   Loader2,
   Trash2,
+  Maximize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -28,6 +29,12 @@ import AssignUsersDialog from "./AssignUsersDialog";
 import RemoveUserDialog from "./RemoveUserDialog";
 import DeleteProjectDialog from "./DeleteProjectDialog";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ProjectDetailProps {
   project: Projet;
@@ -43,6 +50,10 @@ export default function ProjectDetail({
   const [editedDescription, setEditedDescription] = useState(
     initialProject.description || ""
   );
+  const [selectedMedia, setSelectedMedia] = useState<{
+    url: string;
+    type: string;
+  } | null>(null);
 
   const { isAdmin, isCollab } = useRole();
   const { project, loading, updateProject } = useProjectDetail(
@@ -155,6 +166,36 @@ export default function ProjectDetail({
 
   return (
     <div className="h-full overflow-y-auto">
+      {/* Modal de visualisation en grand écran */}
+      <Dialog
+        open={!!selectedMedia}
+        onOpenChange={() => setSelectedMedia(null)}
+      >
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Visualisation du média</DialogTitle>
+          </DialogHeader>
+          {selectedMedia && (
+            <div className="relative w-full aspect-video">
+              {selectedMedia.type === "video" ? (
+                <video
+                  src={selectedMedia.url}
+                  className="w-full h-full object-contain rounded-lg"
+                  controls
+                  autoPlay
+                />
+              ) : (
+                <img
+                  src={selectedMedia.url}
+                  alt="Media en grand écran"
+                  className="w-full h-full object-contain rounded-lg"
+                />
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <div className="flex">
         {/* Main Content */}
         <div className={cn("flex-1", showActivity ? "mr-[400px]" : "")}>
@@ -314,16 +355,29 @@ export default function ProjectDetail({
                             className="w-full h-full object-cover rounded-lg"
                           />
                         )}
-                        {isAdmin && (
+                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button
-                            variant="destructive"
+                            variant="secondary"
                             size="icon"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => handleDeleteMedia(item.id)}
+                            onClick={() =>
+                              setSelectedMedia({
+                                url: item.url,
+                                type: item.media_type,
+                              })
+                            }
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Maximize2 className="h-4 w-4" />
                           </Button>
-                        )}
+                          {isCollab && (
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => handleDeleteMedia(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                     {media.length === 0 && (
