@@ -336,7 +336,7 @@ export default function ProjectDetail({
                     <Loader2 className="animate-spin" />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="flex">
                     {media.map((item) => (
                       <div
                         key={item.id}
