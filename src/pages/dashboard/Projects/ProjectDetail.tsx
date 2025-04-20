@@ -14,13 +14,14 @@ import {
   Maximize2,
   Edit,
   Eye,
+  Reply,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Projet } from "./ProjectListView";
 import { Card, CardContent } from "@/components/ui/card";
-import { useProjectComments } from "@/hooks/useProjectComments";
+import { useCommentProject, ProjectComment } from "@/hooks/useCommentProject";
 import { useProjectUsers } from "@/hooks/useProjectUsers";
 import { useProjectDetail } from "@/hooks/useProjectDetail";
 import { useProjectMedia } from "@/hooks/useProjectMedia";
@@ -42,6 +43,43 @@ interface ProjectDetailProps {
   project: Projet;
 }
 
+interface CommentProps {
+  comment: ProjectComment;
+  onReply: (parentId: number) => void;
+}
+
+function CommentItem({ comment, onReply }: CommentProps) {
+  return (
+    <div className="flex gap-3 mb-4 group">
+      <div className="flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+          {comment.author?.nom?.charAt(0) || "?"}
+        </div>
+      </div>
+      <div className="flex-1">
+        <div className="bg-secondary/20 rounded-lg p-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-medium">{comment.author?.nom}</span>
+            <span className="text-xs text-gray-500">
+              {new Date(comment.created_at).toLocaleString()}
+            </span>
+          </div>
+          <p className="text-sm">{comment.content}</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={() => onReply(comment.id)}
+        >
+          <Reply className="h-3 w-3 mr-1" />
+          Répondre
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectDetail({
   project: initialProject,
 }: ProjectDetailProps) {
@@ -56,6 +94,7 @@ export default function ProjectDetail({
     url: string;
     type: string;
   } | null>(null);
+  const [replyToId, setReplyToId] = useState<number | null>(null);
 
   const { isAdmin, isCollab, isClient } = useRole();
   const { project, loading, updateProject } = useProjectDetail(
@@ -65,7 +104,7 @@ export default function ProjectDetail({
     comments,
     loading: commentsLoading,
     addComment,
-  } = useProjectComments(initialProject.id);
+  } = useCommentProject(initialProject.id);
   const { loading: usersLoading } = useProjectUsers(initialProject.id);
   const {
     allAccounts,
@@ -112,12 +151,28 @@ export default function ProjectDetail({
     if (!newComment.trim()) return;
 
     try {
-      await addComment(newComment);
+      console.log("Tentative d'envoi du commentaire:", {
+        content: newComment,
+        projectId: initialProject.id,
+        replyToId,
+      });
+
+      const result = await addComment(
+        newComment,
+        replyToId ? parseInt(replyToId.toString()) : undefined
+      );
+      console.log("Commentaire ajouté avec succès:", result);
+
       setNewComment("");
+      setReplyToId(null);
       toast.success("Commentaire ajouté avec succès");
     } catch (error) {
-      console.error("Erreur lors de l'ajout du commentaire:", error);
-      toast.error("Erreur lors de l'ajout du commentaire");
+      console.error("Erreur détaillée lors de l'ajout du commentaire:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de l'ajout du commentaire"
+      );
     }
   };
 
@@ -148,6 +203,25 @@ export default function ProjectDetail({
       );
     }
   };
+
+  const handleReply = (parentId: number) => {
+    setReplyToId(parentId);
+    setNewComment(`@${comments.find((c) => c.id === parentId)?.author?.nom} `);
+  };
+
+  // Organiser les commentaires en arbre
+  const commentTree = comments.reduce(
+    (acc: (ProjectComment & { replies: ProjectComment[] })[], comment) => {
+      if (!comment.parent_id) {
+        acc.push({
+          ...comment,
+          replies: comments.filter((c) => c.parent_id === comment.id),
+        });
+      }
+      return acc;
+    },
+    []
+  );
 
   if (
     loading ||
@@ -465,22 +539,66 @@ export default function ProjectDetail({
 
           <div className="flex flex-col h-[calc(100%-64px)]">
             <ScrollArea className="flex-1 p-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="mb-4">
-                  <p className="text-gray-700">{comment.content}</p>
+              {commentTree.map((comment) => (
+                <div key={comment.id} className="mb-6">
+                  <CommentItem comment={comment} onReply={handleReply} />
+                  {comment.replies.length > 0 && (
+                    <div className="ml-12 space-y-4">
+                      {comment.replies.map((reply) => (
+                        <CommentItem
+                          key={reply.id}
+                          comment={reply}
+                          onReply={handleReply}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
+              {comments.length === 0 && (
+                <div className="text-center text-gray-500 py-4">
+                  Aucun commentaire pour le moment
+                </div>
+              )}
             </ScrollArea>
 
             <div className="p-4 border-t">
+              {replyToId && (
+                <div className="flex items-center justify-between mb-2 bg-secondary/10 p-2 rounded">
+                  <span className="text-sm">
+                    Réponse à{" "}
+                    {comments.find((c) => c.id === replyToId)?.author?.nom}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setReplyToId(null);
+                      setNewComment("");
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <div className="flex gap-2">
                 <Input
-                  placeholder="Écrivez un commentaire..."
+                  placeholder={
+                    replyToId
+                      ? "Écrivez votre réponse..."
+                      : "Écrivez un commentaire..."
+                  }
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
                 />
-                <Button onClick={handleSendComment}>Envoyer</Button>
+                <Button onClick={handleSendComment}>
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Envoyer"
+                  )}
+                </Button>
               </div>
             </div>
           </div>
