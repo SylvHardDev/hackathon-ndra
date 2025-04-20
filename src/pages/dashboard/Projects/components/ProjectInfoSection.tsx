@@ -28,8 +28,8 @@ export function ProjectInfoSection({
     allAccounts,
     assignedIds,
     loading: assignmentsLoading,
-    updateAssignments,
   } = useProjectAssignments(projectId);
+
   const assignedUsers = allAccounts.filter((acct) =>
     assignedIds.includes(acct.id)
   );
@@ -66,7 +66,6 @@ export function ProjectInfoSection({
                       projectId={projectId}
                       userId={user.id}
                       userName={user.nom}
-                      onSuccess={() => updateAssignments(assignedIds)}
                     />
                   )}
                 </div>

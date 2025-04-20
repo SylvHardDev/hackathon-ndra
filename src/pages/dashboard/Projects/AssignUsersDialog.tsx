@@ -6,6 +6,20 @@ import { Check, Loader2, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { PlusCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useProjectAssignments } from "@/hooks/useProjectAssignments";
+import { useAssignUser } from "@/hooks/useAssignUser";
+import { useAssignUsersToProject } from "@/hooks/useAssignUsersToProject";
 
 export function useMyAssignedProjectIds() {
   const { user } = useAuth();
@@ -54,29 +68,7 @@ export function useMyAssignedProjectIds() {
   return { assignedIds, loading, error };
 }
 
-// Type pour un utilisateur - Rendre email optionnel pour résoudre l'erreur de type
-interface User {
-  id: number;
-  user_id: string;
-  email?: string; // Rendu optionnel
-  nom?: string;
-  role?: string;
-}
-
 // Ajouter le composant AssignUsersDialog
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { PlusCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-
 interface AssignUsersDialogProps {
   projectId: number;
 }
@@ -85,54 +77,13 @@ export default function AssignUsersDialog({
   projectId,
 }: AssignUsersDialogProps) {
   const [open, setOpen] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [assignedUsers, setAssignedUsers] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
 
-  // Charger la liste des utilisateurs
-  useEffect(() => {
-    if (!open) return;
-
-    const fetchUsers = async () => {
-      setLoadingUsers(true);
-      setErrorMessage(null);
-
-      try {
-        // Récupérer tous les utilisateurs (table accounts)
-        const { data: allUsers, error: usersError } = await supabase
-          .from("accounts")
-          .select("id, user_id, nom, role")
-          .order("created_at", { ascending: false });
-
-        if (usersError) throw usersError;
-
-        // Récupérer les utilisateurs déjà assignés à ce projet
-        const { data: assignments, error: assignmentsError } = await supabase
-          .from("project_account")
-          .select("account_id")
-          .eq("project_id", projectId);
-
-        if (assignmentsError) throw assignmentsError;
-
-        const assignedIds = assignments?.map((a) => a.account_id) || [];
-        setAssignedUsers(assignedIds);
-
-        // Mettre à jour la liste des utilisateurs
-        setUsers(allUsers || []);
-      } catch (err) {
-        setErrorMessage((err as Error).message);
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-
-    fetchUsers();
-  }, [open, projectId]);
+  const { assignedIds } = useProjectAssignments(projectId);
+  const { users, loadingUsers, errorMessage, fetchUsers, filterUsers } =
+    useAssignUser();
+  const { submitting, handleAssignUsers } = useAssignUsersToProject(projectId);
 
   // Gérer la sélection d'un utilisateur
   const handleToggleUser = (userId: number) => {
@@ -143,57 +94,13 @@ export default function AssignUsersDialog({
     );
   };
 
-  // Filtre des utilisateurs basé sur la recherche
-  const filteredUsers = users.filter(
-    (user) =>
-      user.nom?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.role?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   // Assigner les utilisateurs sélectionnés au projet
-  const handleAssignUsers = async () => {
-    if (selectedUsers.length === 0) return;
-
-    setSubmitting(true);
-    setErrorMessage(null);
-
-    try {
-      // Filtrer les IDs non définis ou invalides
-      const validSelectedUsers = selectedUsers.filter(
-        (id) => typeof id === "number" && !isNaN(id)
-      );
-
-      if (validSelectedUsers.length === 0) {
-        throw new Error("Aucun utilisateur valide à assigner");
-      }
-
-      // Créer les nouvelles affectations
-      const assignmentsToCreate = validSelectedUsers.map((userId) => ({
-        project_id: projectId,
-        account_id: userId,
-      }));
-
-      const { error } = await supabase
-        .from("project_account")
-        .insert(assignmentsToCreate);
-
-      if (error) throw error;
-
-      // Notification de succès
-      toast({
-        title: "Utilisateurs assignés",
-        description: `${validSelectedUsers.length} utilisateur(s) assigné(s) au projet avec succès`,
-      });
-
-      // Fermer le dialogue après succès
+  const handleSubmit = async () => {
+    const success = await handleAssignUsers(selectedUsers);
+    if (success) {
       setOpen(false);
       setSelectedUsers([]);
       setSearchQuery("");
-    } catch (err) {
-      console.error("Erreur d'assignation:", err);
-      setErrorMessage((err as Error).message);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -202,8 +109,9 @@ export default function AssignUsersDialog({
       open={open}
       onOpenChange={(newOpen) => {
         setOpen(newOpen);
-        if (!newOpen) {
-          // Réinitialiser les états à la fermeture
+        if (newOpen) {
+          fetchUsers();
+        } else {
           setSelectedUsers([]);
           setSearchQuery("");
         }
@@ -263,7 +171,7 @@ export default function AssignUsersDialog({
             <div className="p-4 bg-red-50 text-red-600 rounded-md">
               {errorMessage}
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : filterUsers(users, searchQuery).length === 0 ? (
             <p className="text-center text-gray-500 py-4">
               {searchQuery
                 ? "Aucun résultat trouvé"
@@ -272,10 +180,10 @@ export default function AssignUsersDialog({
           ) : (
             <ScrollArea className="h-[300px] pr-4">
               <div className="space-y-1">
-                {filteredUsers.map((user) => {
+                {filterUsers(users, searchQuery).map((user) => {
                   if (!user || typeof user.id !== "number") return null;
 
-                  const isAssigned = assignedUsers.includes(user.id);
+                  const isAssigned = assignedIds.includes(user.id);
                   const isSelected = selectedUsers.includes(user.id);
 
                   return (
@@ -335,7 +243,7 @@ export default function AssignUsersDialog({
             Annuler
           </Button>
           <Button
-            onClick={handleAssignUsers}
+            onClick={handleSubmit}
             disabled={selectedUsers.length === 0 || submitting}
           >
             {submitting ? (

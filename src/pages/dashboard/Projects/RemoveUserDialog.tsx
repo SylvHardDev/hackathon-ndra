@@ -2,36 +2,36 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { supabase } from "@/lib/supabase";
+import { useProjectAssignments } from "@/hooks/useProjectAssignments";
+import { toast } from "sonner";
 
 interface RemoveUserDialogProps {
   projectId: number;
   userId: number;
   userName: string;
-  onSuccess: () => void;
 }
 
 export default function RemoveUserDialog({
   projectId,
   userId,
   userName,
-  onSuccess,
 }: RemoveUserDialogProps) {
   const [open, setOpen] = useState(false);
+  const { updateAssignments, assignedIds } = useProjectAssignments(projectId);
 
   const handleRemoveUser = async () => {
     try {
-      const { error } = await supabase
-        .from("project_account")
-        .delete()
-        .eq("project_id", projectId)
-        .eq("account_id", userId);
+      // Créer une nouvelle liste sans l'utilisateur à supprimer
+      const newAssignedIds = assignedIds.filter((id) => id !== userId);
 
-      if (error) throw error;
-      onSuccess();
+      // Mettre à jour les assignations
+      await updateAssignments(newAssignedIds);
+
+      toast.success(`${userName} a été retiré du projet`);
+      setOpen(false);
     } catch (error) {
       console.error("Erreur lors de la suppression de l'utilisateur:", error);
-      throw error;
+      toast.error("Erreur lors de la suppression de l'utilisateur");
     }
   };
 
