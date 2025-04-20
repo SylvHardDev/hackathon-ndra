@@ -45,7 +45,7 @@ export default function DeleteProjectDialog({
   return (
     <>
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         onClick={() => setOpen(true)}
         className="text-red-500 hover:text-red-600"

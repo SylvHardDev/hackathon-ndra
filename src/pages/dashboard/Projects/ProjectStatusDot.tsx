@@ -104,24 +104,22 @@ export default function ProjectStatusDot({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild className="p-0">
         <Button
           variant="ghost"
-          className="h-7 px-2 hover:!bg-transparent cursor-pointer"
+          className="h-7 hover:!bg-transparent cursor-pointer"
         >
-          <div className="flex items-center gap-2">
-            <span
-              className="text-sm font-medium rounded-sm px-2 py-1"
-              style={{
-                background: currentConfig.bgColor,
-              }}
-            >
-              {currentConfig.label}
-            </span>
-          </div>
+          <span
+            className="text-sm font-medium rounded-sm px-2 py-1"
+            style={{
+              background: currentConfig.bgColor,
+            }}
+          >
+            {currentConfig.label}
+          </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-1">
+      <PopoverContent className="w-56 p-1" align="end">
         <div className="flex flex-col gap-1">
           {availableStatuses.map((s) => {
             const config = statusConfigs[s];
@@ -130,7 +128,7 @@ export default function ProjectStatusDot({
                 key={s}
                 variant="ghost"
                 className={cn(
-                  "flex items-center justify-between px-2 py-1.5 text-sm font-normal",
+                  "flex items-center justify-between px-2 py-1.5 text-sm font-normal cursor-pointer",
                   status === s && "bg-gray-100/2"
                 )}
                 onClick={() => handleStatusChange(s)}

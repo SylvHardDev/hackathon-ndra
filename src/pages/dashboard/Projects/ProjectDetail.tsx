@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { ProjectInfoSection } from "./components/ProjectInfoSection";
 import { ProjectMediaSection } from "./components/ProjectMediaSection";
 import { ActivitySidebar } from "./components/ActivitySidebar";
+import { Card } from "@/components/ui/card";
 
 interface ProjectDetailProps {
   project: Projet;
@@ -72,62 +73,74 @@ export default function ProjectDetail({
     <div className="h-full overflow-y-auto">
       <div className="flex">
         {/* Main Content */}
-        <div className={cn("flex-1", showActivity ? "mr-[400px]" : "")}>
-          <div className="flex items-center justify-between mb-6">
-            {isEditing ? (
-              <div className="flex-1 space-y-2">
-                <Input
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="text-2xl font-bold"
-                />
-                <Input
-                  value={editedDescription}
-                  onChange={(e) => setEditedDescription(e.target.value)}
-                  placeholder="Description du projet"
-                />
-              </div>
-            ) : (
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold">{currentProject.title}</h1>
-                  {isAdmin && (
-                    <DeleteProjectDialog
-                      projectId={currentProject.id}
-                      projectName={currentProject.title}
-                    />
+        <div
+          className={cn(
+            "flex-1 flex flex-col gap-6",
+            showActivity ? "mr-[400px]" : ""
+          )}
+        >
+          <Card className="p-6 relative">
+            <div className="flex items-center justify-between">
+              {isEditing ? (
+                <div className="flex-1 space-y-2">
+                  <Input
+                    value={editedTitle}
+                    onChange={(e) => setEditedTitle(e.target.value)}
+                    className="text-2xl font-bold"
+                  />
+                  <Input
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    placeholder="Description du projet"
+                  />
+                </div>
+              ) : (
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold">
+                      {currentProject.title}
+                    </h1>
+                  </div>
+                  {currentProject.description && (
+                    <p className="text-gray-600 mt-2">
+                      {currentProject.description}
+                    </p>
                   )}
                 </div>
-                {currentProject.description && (
-                  <p className="text-gray-600 mt-2">
-                    {currentProject.description}
-                  </p>
-                )}
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              {isAdmin && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    isEditing ? handleSaveChanges() : setIsEditing(true)
-                  }
-                >
-                  {isEditing ? (
-                    <Save className="h-4 w-4" />
-                  ) : (
-                    <Pencil className="h-4 w-4" />
-                  )}
-                </Button>
               )}
-              <ProjectStatusDot
-                project={currentProject}
-                onStatusChange={handleStatusChange}
-              />
+              <div className="flex flex-col items-end gap-4 h-full">
+                <div>
+                  {isAdmin && (
+                    <div className="flex flex-cols items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() =>
+                          isEditing ? handleSaveChanges() : setIsEditing(true)
+                        }
+                      >
+                        {isEditing ? (
+                          <Save className="h-4 w-4" />
+                        ) : (
+                          <Pencil className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <DeleteProjectDialog
+                        projectId={currentProject.id}
+                        projectName={currentProject.title}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <ProjectStatusDot
+                    project={currentProject}
+                    onStatusChange={handleStatusChange}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-
+          </Card>
           <div className="grid gap-6">
             <ProjectInfoSection
               projectId={currentProject.id}
@@ -160,10 +173,10 @@ export default function ProjectDetail({
           <Button
             variant="outline"
             size="icon"
-            className="fixed right-4 top-4"
+            className="fixed p-6 bottom-4 right-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 cursor-pointer"
             onClick={() => setShowActivity(true)}
           >
-            <MessageCircle className="h-5 w-5" />
+            <MessageCircle size={24} strokeWidth={1.5} />
           </Button>
         )}
       </div>

@@ -34,52 +34,94 @@ export function ProjectInfoSection({
     assignedIds.includes(acct.id)
   );
 
+  const collaborators = assignedUsers.filter((user) => user.role === "employe");
+  const clients = assignedUsers.filter((user) => user.role === "client");
+
   return (
     <Card>
-      <CardContent className="p-6 flex justify-between">
-        <div>
-          <div className="flex justify-between items-center mb-4 gap-10">
-            <h3 className="text-lg font-semibold">Utilisateurs assignés</h3>
-            {isAdmin && (
-              <div>
-                <AssignUsersDialog projectId={projectId} />
+      <CardContent className="p-6 pt-12 relative">
+        <div className="grid grid-cols-2 gap-6">
+          {isAdmin && (
+            <div className="absolute right-6 top-0">
+              <AssignUsersDialog projectId={projectId} />
+            </div>
+          )}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Collaborateurs</h3>
+            </div>
+            {assignmentsLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {collaborators.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-2 hover:bg-gray-50/5 rounded"
+                  >
+                    <div>
+                      <p className="font-medium">{user.nom}</p>
+                      <p className="text-sm text-gray-500">{user.role}</p>
+                    </div>
+                    {isAdmin && (
+                      <RemoveUserDialog
+                        projectId={projectId}
+                        userId={user.id}
+                        userName={user.nom}
+                      />
+                    )}
+                  </div>
+                ))}
+                {collaborators.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">
+                    Aucun collaborateur assigné
+                  </p>
+                )}
               </div>
             )}
           </div>
-          {assignmentsLoading ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="animate-spin" />
+
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Clients</h3>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {assignedUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-2 hover:bg-gray-50/5 rounded"
-                >
-                  <div>
-                    <p className="font-medium">{user.nom}</p>
-                    <p className="text-sm text-gray-500">{user.role}</p>
+            {assignmentsLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {clients.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-2 hover:bg-gray-50/5 rounded"
+                  >
+                    <div>
+                      <p className="font-medium">{user.nom}</p>
+                      <p className="text-sm text-gray-500">{user.role}</p>
+                    </div>
+                    {isAdmin && (
+                      <RemoveUserDialog
+                        projectId={projectId}
+                        userId={user.id}
+                        userName={user.nom}
+                      />
+                    )}
                   </div>
-                  {isAdmin && (
-                    <RemoveUserDialog
-                      projectId={projectId}
-                      userId={user.id}
-                      userName={user.nom}
-                    />
-                  )}
-                </div>
-              ))}
-              {assignedUsers.length === 0 && (
-                <p className="text-gray-500 text-center py-4">
-                  Aucun utilisateur assigné
-                </p>
-              )}
-            </div>
-          )}
+                ))}
+                {clients.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">
+                    Aucun client assigné
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-6 mt-6">
           <div className="flex items-center gap-3">
             <Calendar className="h-5 w-5 text-gray-500" />
             <div>

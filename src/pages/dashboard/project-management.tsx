@@ -10,9 +10,11 @@ import {
 import CreateProjectDialog from "./CreateProjectDialog";
 import ProjectListView from "./Projects/ProjectListView";
 import { useRole } from "@/hooks/useRole";
+import { useState } from "react";
 
 export function ProjectManagement() {
   const { isAdmin } = useRole();
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="space-y-6">
@@ -26,7 +28,12 @@ export function ProjectManagement() {
       <div className="flex items-center space-x-2">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher des projets..." className="pl-8" />
+          <Input
+            placeholder="Rechercher des projets..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <Select defaultValue="all">
           <SelectTrigger className="w-[180px]">
@@ -45,7 +52,7 @@ export function ProjectManagement() {
         </Select>
       </div>
 
-      <ProjectListView />
+      <ProjectListView searchQuery={searchQuery} />
     </div>
   );
 }

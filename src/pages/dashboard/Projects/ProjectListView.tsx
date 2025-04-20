@@ -33,7 +33,11 @@ export interface Projet {
   description: string;
 }
 
-export default function ProjectListView() {
+interface ProjectListViewProps {
+  searchQuery: string;
+}
+
+export default function ProjectListView({ searchQuery }: ProjectListViewProps) {
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
   const { projects, loading: projectsLoading, updateProject } = useProjects();
   const { assignedIds, loading: assignmentsLoading } =
@@ -43,10 +47,20 @@ export default function ProjectListView() {
     null
   );
 
-  // Filtrer les projets selon le rôle
-  const filteredProjects = isAdmin
-    ? projects // L'admin voit tous les projets
-    : projects.filter((project) => assignedIds.includes(project.id)); // Les autres utilisateurs ne voient que leurs projets assignés
+  // Filtrer les projets selon le rôle et la recherche
+  const filteredProjects = (
+    isAdmin
+      ? projects // L'admin voit tous les projets
+      : projects.filter((project) => assignedIds.includes(project.id))
+  ) // Les autres utilisateurs ne voient que leurs projets assignés
+    .filter(
+      (project) =>
+        project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.description
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        project.type.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const handleStatusChange = async (
     projectId: number,
@@ -70,7 +84,7 @@ export default function ProjectListView() {
 
   return (
     <div className="space-y-4">
-      <div className="mb-4 ">
+      <div className="mb-4">
         <Tabs
           value={viewMode}
           onValueChange={(val) => setViewMode(val as "list" | "kanban")}

@@ -73,7 +73,7 @@ export function ActivitySidebar({
   return (
     <div
       className={cn(
-        "fixed right-0 top-0 w-[400px] border-l bg-white/2 h-full transition-transform duration-200 ease-in-out",
+        "fixed right-0 top-0 w-[400px] border-l backdrop-blur supports-[backdrop-filter]:bg-background/60 h-full transition-transform duration-200 ease-in-out",
         showActivity ? "translate-x-0" : "translate-x-full"
       )}
     >
