@@ -14,6 +14,7 @@ import { Pencil, Trash2, MessageSquarePlus } from "lucide-react";
 import { useProjectMedia } from "@/hooks/useProjectMedia";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function VideoEditPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -113,7 +114,11 @@ export default function VideoEditPage() {
   };
 
   if (mediaLoading || commentsLoading) {
-    return <div>Chargement...</div>;
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-[90vh] w-full" />
+      </div>
+    );
   }
 
   const video = media.find((m) => m.media_type === "video");
@@ -123,13 +128,13 @@ export default function VideoEditPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
+      <div className="flex flex-col gap-4">
+        <div className="">
           <div className="relative">
             <video
               ref={videoRef}
               src={video.url}
-              className="w-full rounded-lg"
+              className="w-full rounded-lg max-h-[90vh]"
               controls
               onTimeUpdate={handleTimeUpdate}
               onPlay={handlePlay}
@@ -139,7 +144,7 @@ export default function VideoEditPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                className="absolute top-2 right-2 bg-white/5 hover:bg-white hover:text-black transition-all duration-300 cursor-pointer"
+                className="absolute top-2 right-2 bg-white/5 hover:bg-white hover:text-black transition-all duration-300 cursor-pointer "
                 onClick={() => setShowCommentModal(true)}
               >
                 <MessageSquarePlus className="h-4 w-4 mr-2" />
@@ -186,14 +191,14 @@ export default function VideoEditPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="">
           <ScrollArea className="h-[600px] rounded-md border p-4">
             <h3 className="text-lg font-semibold mb-4">Commentaires</h3>
             <div className="space-y-4">
               {comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                  className="p-3 border rounded-lg hover:bg-gray-50/5 cursor-pointer"
                   onClick={() => handleCommentClick(comment.timecode)}
                 >
                   <div className="flex justify-between items-start">
