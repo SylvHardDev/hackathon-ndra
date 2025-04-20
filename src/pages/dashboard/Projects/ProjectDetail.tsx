@@ -24,6 +24,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/hooks/useRole";
 import { useProjectAssignments } from "@/hooks/useProjectAssignments";
 import AssignUsersDialog from "./AssignUsersDialog";
+import RemoveUserDialog from "./RemoveUserDialog";
+import DeleteProjectDialog from "./DeleteProjectDialog";
 
 interface ProjectDetailProps {
   project: Projet;
@@ -40,7 +42,7 @@ export default function ProjectDetail({
     initialProject.description || ""
   );
 
-  const { isAdmin } = useRole();
+  const { isAdmin, role } = useRole();
   const { project, loading, updateProject } = useProjectDetail(
     initialProject.id
   );
@@ -56,6 +58,7 @@ export default function ProjectDetail({
     allAccounts,
     assignedIds,
     loading: assignmentsLoading,
+    refetch: refetchAssignments,
   } = useProjectAssignments(initialProject.id);
   const assignedUsers = allAccounts.filter((acct) =>
     assignedIds.includes(acct.id)
@@ -132,7 +135,15 @@ export default function ProjectDetail({
               </div>
             ) : (
               <div className="flex-1">
-                <h1 className="text-2xl font-bold">{currentProject.title}</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold">{currentProject.title}</h1>
+                  {isAdmin && (
+                    <DeleteProjectDialog
+                      projectId={currentProject.id}
+                      projectName={currentProject.title}
+                    />
+                  )}
+                </div>
                 {currentProject.description && (
                   <p className="text-gray-600 mt-2">
                     {currentProject.description}
@@ -191,11 +202,16 @@ export default function ProjectDetail({
                         >
                           <div>
                             <p className="font-medium">{user.nom}</p>
-                            {/* <p className="text-sm text-gray-500">{user.email}</p> */}
+                            <p className="text-sm text-gray-500">{user.role}</p>
                           </div>
-                          <span className="text-sm text-gray-500">
-                            {user.role}
-                          </span>
+                          {isAdmin && (
+                            <RemoveUserDialog
+                              projectId={currentProject.id}
+                              userId={user.id}
+                              userName={user.nom}
+                              onSuccess={refetchAssignments}
+                            />
+                          )}
                         </div>
                       ))}
                       {assignedUsers.length === 0 && (
@@ -230,31 +246,33 @@ export default function ProjectDetail({
               </CardContent>
             </Card>
 
-            {/* Section Upload */}
-            <Card>
-              <CardContent className="">
-                <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">
-                    Déposez vos fichiers ici
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">ou</p>
-                  <label className="cursor-pointer">
-                    <Input
-                      type="file"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                      multiple
-                      accept="image/*,video/*"
-                    />
-                    <Button variant="outline">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Sélectionner des fichiers
-                    </Button>
-                  </label>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Section Upload - visible uniquement pour les employés */}
+            {role === "employe" && (
+              <Card>
+                <CardContent className="">
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <Upload className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium mb-2">
+                      Déposez vos fichiers ici
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-4">ou</p>
+                    <label className="cursor-pointer">
+                      <Input
+                        type="file"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        multiple
+                        accept="image/*,video/*"
+                      />
+                      <Button variant="outline">
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Sélectionner des fichiers
+                      </Button>
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
