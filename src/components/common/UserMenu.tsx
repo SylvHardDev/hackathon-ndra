@@ -18,9 +18,17 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
+import { useUser } from "@/hooks/useUser";
+import { useRole } from "@/hooks/useRole";
+import { useSession } from "@/hooks/useSession";
 
 export function UserMenu() {
   const { logout, isLoading } = useLogout();
+
+  const { data } = useSession();
+  const { userRole } = useRole();
+
+  const { data: userInfo } = useUser(data?.session?.user.id);
 
   return (
     <DropdownMenu>
@@ -38,9 +46,11 @@ export function UserMenu() {
       <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Sylvestre Hardy</p>
+            <p className="text-sm font-medium leading-none">
+              {userInfo?.[0].nom}
+            </p>
             <p className="text-xs leading-none text-muted-foreground">
-              hardsyldev@gmail.com
+              {userInfo?.[0].email}
             </p>
           </div>
         </DropdownMenuLabel>

@@ -3,9 +3,10 @@ import { supabase } from "@/lib/supabase";
 
 interface UserProfile {
   id: string;
-  full_name: string;
+  nom: string;
   image_url?: string;
   role: string;
+  email: string;
 }
 
 export const useUser = (userId: string | undefined) => {
@@ -15,7 +16,7 @@ export const useUser = (userId: string | undefined) => {
       if (!userId) return [];
 
       const { data, error } = await supabase
-        .from("accounts")
+        .from("accounts_with_email")
         .select("*")
         .eq("user_id", userId);
 

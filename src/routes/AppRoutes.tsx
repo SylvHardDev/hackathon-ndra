@@ -29,6 +29,7 @@ export default function App() {
 
         {/* Routes protégées */}
         <Route element={<AuthLayout />}>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Route pour les utilisateurs non-admin */}
