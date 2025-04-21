@@ -58,36 +58,57 @@ interface ProjectListViewProps {
   statusFilter: string;
 }
 
+type ProjectStatus =
+  | "open"
+  | "in_realisation"
+  | "in_validation"
+  | "validate"
+  | "need_revision"
+  | "closed";
+type UserRole = "admin" | "employee" | "client";
+
 // Définition des transitions autorisées par rôle
-const ALLOWED_TRANSITIONS = {
+const ALLOWED_TRANSITIONS: Record<
+  UserRole,
+  Partial<Record<ProjectStatus, ProjectStatus[]>>
+> = {
   admin: {
-    open: ["in_realisation"],
-    in_realisation: ["in_validation"],
-    in_validation: ["validate", "need_revision"],
-    need_revision: ["in_realisation"],
     validate: ["closed"],
     closed: ["open"],
   },
-  manager: {
-    open: ["in_realisation"],
+  employee: {
+    in_validation: ["in_realisation"],
     in_realisation: ["in_validation"],
-    in_validation: ["validate", "need_revision"],
-    need_revision: ["in_realisation"],
-    validate: ["closed"],
   },
-  collaborator: {
-    open: ["in_realisation"],
-    in_realisation: ["in_validation"],
-    need_revision: ["in_realisation"],
+  client: {
+    need_revision: ["validate"],
+    validate: ["need_revision", "validate"],
   },
-} as const;
+};
+
+// Définition des statuts accessibles par rôle
+const ROLE_STATUSES: Record<UserRole, ProjectStatus[]> = {
+  admin: ["open", "closed", "validate"],
+  employee: ["open", "in_realisation", "in_validation", "need_revision"],
+  client: ["in_validation", "need_revision", "validate"],
+};
+
+// Définition du flux de changement de statut
+const STATUS_FLOW: Record<ProjectStatus, ProjectStatus[]> = {
+  open: ["in_realisation"],
+  in_realisation: ["in_validation"],
+  in_validation: ["need_revision", "in_realisation", "validate"],
+  need_revision: ["in_realisation", "validate"],
+  validate: ["need_revision", "closed"],
+  closed: ["open"],
+};
 
 const statusColumns = [
   { id: "open", title: "Ouvert" },
   { id: "in_realisation", title: "En réalisation" },
   { id: "in_validation", title: "En validation" },
-  { id: "validate", title: "Validé" },
   { id: "need_revision", title: "Révision nécessaire" },
+  { id: "validate", title: "Validé" },
   { id: "closed", title: "Fermé" },
 ] as const;
 
@@ -95,14 +116,14 @@ const KanbanColumn = ({
   id,
   title,
   children,
-  isOver,
-  isAllowed,
+  isOver = false,
+  isAllowed = false,
 }: {
   id: string;
   title: string;
   children: React.ReactNode;
-  isOver: boolean;
-  isAllowed: boolean;
+  isOver?: boolean;
+  isAllowed?: boolean;
 }) => {
   const { setNodeRef } = useDroppable({
     id,
@@ -196,20 +217,19 @@ export default function ProjectListView({
     if (!over) return;
 
     const activeProject = projects.find((p) => p.id === active.id);
-    const newStatus = over.id as Projet["status"];
+    const newStatus = over.id as ProjectStatus;
 
     if (!activeProject || activeProject.status === newStatus) return;
 
-    const userRole = isAdmin ? "admin" : "manager"; // À adapter selon votre logique de rôles
-    const allowedTransitions = ALLOWED_TRANSITIONS[userRole];
-    const currentStatus = activeProject.status;
-    const isTransitionAllowed =
-      allowedTransitions[currentStatus]?.includes(newStatus);
+    const userRole = isAdmin ? "admin" : ("employee" as UserRole);
+    const allowedStatuses = ROLE_STATUSES[userRole];
+    const isStatusAllowed = allowedStatuses.includes(newStatus);
+    const allowedTransitions = STATUS_FLOW[activeProject.status];
+    const isFlowRespected = allowedTransitions.includes(newStatus);
 
-    // Mettre à jour l'état pour le feedback visuel
     setCurrentDragStatus({
       isOver: true,
-      isAllowed: isTransitionAllowed,
+      isAllowed: isStatusAllowed && isFlowRespected,
       targetColumn: newStatus,
     });
   };
@@ -222,7 +242,7 @@ export default function ProjectListView({
     }
 
     const activeProject = projects.find((p) => p.id === active.id);
-    const newStatus = over.id as Projet["status"];
+    const newStatus = over.id as ProjectStatus;
 
     if (!activeProject || activeProject.status === newStatus) {
       setCurrentDragStatus(null);
@@ -230,16 +250,22 @@ export default function ProjectListView({
       return;
     }
 
-    const userRole = isAdmin ? "admin" : "manager"; // À adapter selon votre logique de rôles
-    const allowedTransitions = ALLOWED_TRANSITIONS[userRole];
-    const currentStatus = activeProject.status;
-    const isTransitionAllowed =
-      allowedTransitions[currentStatus]?.includes(newStatus);
+    const userRole = isAdmin ? "admin" : ("employee" as UserRole);
+    const allowedStatuses = ROLE_STATUSES[userRole];
+    const isStatusAllowed = allowedStatuses.includes(newStatus);
 
-    if (!isTransitionAllowed) {
-      toast.error(
-        "Votre rôle ne vous permet pas d'effectuer ce changement de statut"
-      );
+    if (!isStatusAllowed) {
+      toast.error("Votre rôle ne permet pas ce changement de statut");
+      setCurrentDragStatus(null);
+      setActiveId(null);
+      return;
+    }
+
+    const allowedTransitions = STATUS_FLOW[activeProject.status];
+    const isFlowRespected = allowedTransitions.includes(newStatus);
+
+    if (!isFlowRespected) {
+      toast.error("Le changement de statut ne respecte pas le flux");
       setCurrentDragStatus(null);
       setActiveId(null);
       return;
