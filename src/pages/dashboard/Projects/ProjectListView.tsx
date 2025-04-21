@@ -35,9 +35,13 @@ export interface Projet {
 
 interface ProjectListViewProps {
   searchQuery: string;
+  statusFilter: string;
 }
 
-export default function ProjectListView({ searchQuery }: ProjectListViewProps) {
+export default function ProjectListView({
+  searchQuery,
+  statusFilter,
+}: ProjectListViewProps) {
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
   const { projects, loading: projectsLoading, updateProject } = useProjects();
   const { assignedIds, loading: assignmentsLoading } =
@@ -47,7 +51,7 @@ export default function ProjectListView({ searchQuery }: ProjectListViewProps) {
     null
   );
 
-  // Filtrer les projets selon le rôle et la recherche
+  // Filtrer les projets selon le rôle, la recherche et le statut
   const filteredProjects = (
     isAdmin
       ? projects // L'admin voit tous les projets
@@ -60,6 +64,9 @@ export default function ProjectListView({ searchQuery }: ProjectListViewProps) {
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
         project.type.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .filter(
+      (project) => statusFilter === "all" || project.status === statusFilter
     );
 
   const handleStatusChange = async (

@@ -15,6 +15,7 @@ import { useState } from "react";
 export function ProjectManagement() {
   const { isAdmin } = useRole();
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   return (
     <div className="space-y-6">
@@ -35,7 +36,7 @@ export function ProjectManagement() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Select defaultValue="all">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
@@ -43,16 +44,14 @@ export function ProjectManagement() {
             <SelectItem value="all">Tous les statuts</SelectItem>
             <SelectItem value="open">Ouvert</SelectItem>
             <SelectItem value="in_realisation">En réalisation</SelectItem>
-            <SelectItem value="en_validation">En validation</SelectItem>
-            <SelectItem value="modification_demandee">
-              Modification demandée
-            </SelectItem>
-            <SelectItem value="ferme">Fermé</SelectItem>
+            <SelectItem value="in_validation">En validation</SelectItem>
+            <SelectItem value="need_revision">Modification demandée</SelectItem>
+            <SelectItem value="closed">Fermé</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <ProjectListView searchQuery={searchQuery} />
+      <ProjectListView searchQuery={searchQuery} statusFilter={statusFilter} />
     </div>
   );
 }
