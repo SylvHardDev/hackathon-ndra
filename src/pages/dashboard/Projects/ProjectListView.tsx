@@ -14,6 +14,24 @@ import { useProjects } from "@/hooks/useProjects";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMyAssignedProjectIds } from "@/hooks/useMyAssignedProjectIds";
 import { useRole } from "@/hooks/useRole";
+import { toast } from "sonner";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { Card } from "@/components/ui/card";
+import { SortableCard } from "./SortableCard";
 
 export type ProjectType = "video" | "design";
 
@@ -38,6 +56,15 @@ interface ProjectListViewProps {
   statusFilter: string;
 }
 
+const statusColumns = [
+  { id: "open", title: "Ouvert" },
+  { id: "in_realisation", title: "En réalisation" },
+  { id: "in_validation", title: "En validation" },
+  { id: "validate", title: "Validé" },
+  { id: "need_revision", title: "Révision nécessaire" },
+  { id: "closed", title: "Fermé" },
+];
+
 export default function ProjectListView({
   searchQuery,
   statusFilter,
@@ -49,6 +76,21 @@ export default function ProjectListView({
   const { isAdmin } = useRole();
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
     null
+  );
+  const [activeId, setActiveId] = useState<number | null>(null);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 300,
+        tolerance: 5,
+      },
+    })
   );
 
   // Filtrer les projets selon le rôle, la recherche et le statut
@@ -78,6 +120,29 @@ export default function ProjectListView({
     } catch (error) {
       console.error("Erreur lors de la mise à jour du statut:", error);
     }
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as number);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeProject = projects.find((p) => p.id === active.id);
+    const newStatus = over.id as Projet["status"];
+
+    if (activeProject && activeProject.status !== newStatus) {
+      try {
+        await updateProject(activeProject.id, { status: newStatus });
+        toast.success("Statut du projet mis à jour avec succès");
+      } catch (error) {
+        toast.error("Vous n'avez pas les permissions pour modifier ce statut");
+      }
+    }
+
+    setActiveId(null);
   };
 
   if (projectsLoading || (!isAdmin && assignmentsLoading)) {
@@ -162,9 +227,43 @@ export default function ProjectListView({
       )}
 
       {viewMode === "kanban" && (
-        <div className="text-center text-gray-600 p-8 bg-gray-50 rounded-lg">
-          La vue Kanban sera bientôt disponible.
-        </div>
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis]}
+        >
+          <div className="grid grid-cols-6 gap-4">
+            {statusColumns.map((column) => (
+              <div key={column.id} className="space-y-4">
+                <h3 className="text-sm font-semibold mb-2">{column.title}</h3>
+                <SortableContext
+                  items={filteredProjects
+                    .filter((project) => project.status === column.id)
+                    .map((project) => project.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {filteredProjects
+                      .filter((project) => project.status === column.id)
+                      .map((project) => (
+                        <SortableCard key={project.id} project={project} />
+                      ))}
+                  </div>
+                </SortableContext>
+              </div>
+            ))}
+          </div>
+          <DragOverlay>
+            {activeId ? (
+              <Card className="p-4 shadow-lg">
+                <h4 className="font-medium mb-2">
+                  {projects.find((p) => p.id === activeId)?.title}
+                </h4>
+              </Card>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
     </div>
   );
