@@ -58,6 +58,30 @@ interface ProjectListViewProps {
   statusFilter: string;
 }
 
+// Définition des transitions autorisées par rôle
+const ALLOWED_TRANSITIONS = {
+  admin: {
+    open: ["in_realisation"],
+    in_realisation: ["in_validation"],
+    in_validation: ["validate", "need_revision"],
+    need_revision: ["in_realisation"],
+    validate: ["closed"],
+    closed: ["open"],
+  },
+  manager: {
+    open: ["in_realisation"],
+    in_realisation: ["in_validation"],
+    in_validation: ["validate", "need_revision"],
+    need_revision: ["in_realisation"],
+    validate: ["closed"],
+  },
+  collaborator: {
+    open: ["in_realisation"],
+    in_realisation: ["in_validation"],
+    need_revision: ["in_realisation"],
+  },
+} as const;
+
 const statusColumns = [
   { id: "open", title: "Ouvert" },
   { id: "in_realisation", title: "En réalisation" },
@@ -71,19 +95,29 @@ const KanbanColumn = ({
   id,
   title,
   children,
+  isOver,
+  isAllowed,
 }: {
   id: string;
   title: string;
   children: React.ReactNode;
+  isOver: boolean;
+  isAllowed: boolean;
 }) => {
-  const { setNodeRef, isOver } = useDroppable({
+  const { setNodeRef } = useDroppable({
     id,
   });
 
   return (
     <div
       ref={setNodeRef}
-      className={`space-y-4 p-2 rounded-lg ${isOver ? "bg-gray-50/5" : ""}`}
+      className={`space-y-4 p-2 rounded-lg ${
+        isOver
+          ? isAllowed
+            ? "bg-green-50/5 border border-green-500"
+            : "bg-red-50/5 border border-red-500"
+          : ""
+      }`}
     >
       <h3 className="text-sm font-semibold mb-2">{title}</h3>
       <div className="space-y-2 min-h-[100px]">{children}</div>
@@ -104,6 +138,11 @@ export default function ProjectListView({
     null
   );
   const [activeId, setActiveId] = useState<number | null>(null);
+  const [currentDragStatus, setCurrentDragStatus] = useState<{
+    isOver: boolean;
+    isAllowed: boolean;
+    targetColumn: Projet["status"];
+  } | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -152,22 +191,68 @@ export default function ProjectListView({
     setActiveId(event.active.id as number);
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
 
     const activeProject = projects.find((p) => p.id === active.id);
     const newStatus = over.id as Projet["status"];
 
-    if (activeProject && activeProject.status !== newStatus) {
-      try {
-        await updateProject(activeProject.id, { status: newStatus });
-        toast.success("Statut du projet mis à jour avec succès");
-      } catch (error) {
-        console.error("Erreur lors de la mise à jour du statut:", error);
-      }
+    if (!activeProject || activeProject.status === newStatus) return;
+
+    const userRole = isAdmin ? "admin" : "manager"; // À adapter selon votre logique de rôles
+    const allowedTransitions = ALLOWED_TRANSITIONS[userRole];
+    const currentStatus = activeProject.status;
+    const isTransitionAllowed =
+      allowedTransitions[currentStatus]?.includes(newStatus);
+
+    // Mettre à jour l'état pour le feedback visuel
+    setCurrentDragStatus({
+      isOver: true,
+      isAllowed: isTransitionAllowed,
+      targetColumn: newStatus,
+    });
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) {
+      setCurrentDragStatus(null);
+      return;
     }
 
+    const activeProject = projects.find((p) => p.id === active.id);
+    const newStatus = over.id as Projet["status"];
+
+    if (!activeProject || activeProject.status === newStatus) {
+      setCurrentDragStatus(null);
+      setActiveId(null);
+      return;
+    }
+
+    const userRole = isAdmin ? "admin" : "manager"; // À adapter selon votre logique de rôles
+    const allowedTransitions = ALLOWED_TRANSITIONS[userRole];
+    const currentStatus = activeProject.status;
+    const isTransitionAllowed =
+      allowedTransitions[currentStatus]?.includes(newStatus);
+
+    if (!isTransitionAllowed) {
+      toast.error(
+        "Votre rôle ne vous permet pas d'effectuer ce changement de statut"
+      );
+      setCurrentDragStatus(null);
+      setActiveId(null);
+      return;
+    }
+
+    try {
+      await updateProject(activeProject.id, { status: newStatus });
+      toast.success("Statut du projet mis à jour avec succès");
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour du statut");
+    }
+
+    setCurrentDragStatus(null);
     setActiveId(null);
   };
 
@@ -256,11 +341,21 @@ export default function ProjectListView({
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
           <div className="grid grid-cols-6 gap-4">
             {statusColumns.map((column) => (
-              <KanbanColumn key={column.id} id={column.id} title={column.title}>
+              <KanbanColumn
+                key={column.id}
+                id={column.id}
+                title={column.title}
+                isOver={
+                  currentDragStatus?.isOver &&
+                  currentDragStatus.targetColumn === column.id
+                }
+                isAllowed={currentDragStatus?.isAllowed || false}
+              >
                 <SortableContext
                   items={filteredProjects
                     .filter((project) => project.status === column.id)
