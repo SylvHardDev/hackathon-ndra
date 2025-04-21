@@ -22,11 +22,16 @@ export function SortableCard({ project }: SortableCardProps) {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1 : 0,
   };
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Card className="p-4 cursor-move hover:shadow-md transition-shadow">
+      <Card
+        className={`p-4 cursor-move hover:shadow-md transition-shadow ${
+          isDragging ? "shadow-lg" : ""
+        }`}
+      >
         <Link to={`/projects/${project.id}`}>
           <h4 className="font-medium mb-2">{project.title}</h4>
         </Link>

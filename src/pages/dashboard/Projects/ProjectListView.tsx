@@ -24,6 +24,8 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
+  DragOverEvent,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -63,7 +65,31 @@ const statusColumns = [
   { id: "validate", title: "Validé" },
   { id: "need_revision", title: "Révision nécessaire" },
   { id: "closed", title: "Fermé" },
-];
+] as const;
+
+const KanbanColumn = ({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+}) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`space-y-4 p-2 rounded-lg ${isOver ? "bg-gray-50/5" : ""}`}
+    >
+      <h3 className="text-sm font-semibold mb-2">{title}</h3>
+      <div className="space-y-2 min-h-[100px]">{children}</div>
+    </div>
+  );
+};
 
 export default function ProjectListView({
   searchQuery,
@@ -138,7 +164,7 @@ export default function ProjectListView({
         await updateProject(activeProject.id, { status: newStatus });
         toast.success("Statut du projet mis à jour avec succès");
       } catch (error) {
-        toast.error("Vous n'avez pas les permissions pour modifier ce statut");
+        console.error("Erreur lors de la mise à jour du statut:", error);
       }
     }
 
@@ -231,27 +257,23 @@ export default function ProjectListView({
           sensors={sensors}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          modifiers={[restrictToVerticalAxis]}
         >
           <div className="grid grid-cols-6 gap-4">
             {statusColumns.map((column) => (
-              <div key={column.id} className="space-y-4">
-                <h3 className="text-sm font-semibold mb-2">{column.title}</h3>
+              <KanbanColumn key={column.id} id={column.id} title={column.title}>
                 <SortableContext
                   items={filteredProjects
                     .filter((project) => project.status === column.id)
                     .map((project) => project.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="space-y-2">
-                    {filteredProjects
-                      .filter((project) => project.status === column.id)
-                      .map((project) => (
-                        <SortableCard key={project.id} project={project} />
-                      ))}
-                  </div>
+                  {filteredProjects
+                    .filter((project) => project.status === column.id)
+                    .map((project) => (
+                      <SortableCard key={project.id} project={project} />
+                    ))}
                 </SortableContext>
-              </div>
+              </KanbanColumn>
             ))}
           </div>
           <DragOverlay>
