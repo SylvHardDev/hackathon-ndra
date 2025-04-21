@@ -14,6 +14,7 @@ import { ProjectManagement } from "@/pages/dashboard/project-management";
 import { UserManagement } from "@/pages/dashboard/user-management";
 import { Route, Routes } from "react-router-dom";
 import ProjectDetail from "@/pages/dashboard/project-detail";
+import VideoEditPage from "@/pages/dashboard/Projects/VideoEditPage";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
 
         {/* Routes protégées */}
         <Route element={<AuthLayout />}>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Route pour les utilisateurs non-admin */}
@@ -40,6 +42,10 @@ export default function App() {
             <Route path="/users" element={<UserManagement />} />
             <Route path="/projects" element={<ProjectManagement />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route
+              path="/dashboard/projects/:projectId/video-edit"
+              element={<VideoEditPage />}
+            />
           </Route>
         </Route>
 

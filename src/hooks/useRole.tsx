@@ -22,10 +22,14 @@ export const useRole = () => {
   });
 
   const isAdmin = userRole === "admin";
+  const isCollab = userRole === "employe";
+  const isClient = userRole === "client";
 
   return {
     userRole,
     isAdmin,
     isLoading,
+    isCollab,
+    isClient,
   };
 };

@@ -8,9 +8,12 @@ import {
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useProjects } from "@/hooks/useProjects";
+import { useRole } from "@/hooks/useRole";
 
 interface ProjectStatusDotProps {
   project: Projet;
+  onStatusChange?: (newStatus: Projet["status"]) => void;
 }
 
 interface StatusConfig {
@@ -20,70 +23,103 @@ interface StatusConfig {
   borderColor: string;
 }
 
-const statusConfigs: Record<Projet["statut"], StatusConfig> = {
+const statusConfigs: Record<Projet["status"], StatusConfig> = {
   open: {
     label: "Ouvert",
-    color: "rgb(100, 5, 100)",
-    bgColor: "rgb(100, 5, 100, 0.5)",
-    borderColor: "rgb(208, 226, 247)",
+    color: "#640564",
+    bgColor: "rgba(100, 5, 100, 0.5)",
+    borderColor: "#d0e2f7",
   },
   in_realisation: {
     label: "En réalisation",
-    color: "rgb(38, 132, 255)",
-    bgColor: "rgba(38, 132, 255, 0.3)",
-    borderColor: "rgb(208, 226, 247)",
+    color: "#2684ff",
+    bgColor: "rgba(38, 132, 255, 0.5)",
+    borderColor: "#d0e2f7",
   },
-  en_validation: {
+  in_validation: {
     label: "En validation",
-    color: "rgb(255, 171, 0)",
-    bgColor: "rgba(255, 171, 0, 0.3)",
-    borderColor: "rgb(255, 236, 199)",
+    color: "#ffab00",
+    bgColor: "rgba(255, 171, 0, 0.5)",
+    borderColor: "#ffecb3",
   },
-  modification_demandee: {
+  validate: {
+    label: "Validé",
+    color: "#00c800",
+    bgColor: "rgba(0, 200, 0, 0.5)",
+    borderColor: "#dfe1e6",
+  },
+  need_revision: {
     label: "Modification demandée",
-    color: "rgb(255, 86, 48)",
-    bgColor: "rgba(255, 86, 48, 0.3)",
-    borderColor: "rgb(255, 214, 204)",
+    color: "#ff5630",
+    bgColor: "rgba(255, 86, 48, 0.5)",
+    borderColor: "#ffd6cc",
   },
-  ferme: {
+  closed: {
     label: "Fermé",
-    color: "rgba(0, 245, 0, 1)",
-    bgColor: "rgba(0, 245, 0, 0.3)",
-    borderColor: "rgb(223, 225, 230)",
+    color: "#00f500",
+    bgColor: "rgba(0, 245, 0, 0.5)",
+    borderColor: "#dfe1e6",
   },
 };
 
-const availableStatuses = Object.keys(statusConfigs) as Projet["statut"][];
+const getAvailableStatuses = (role: string | null): Projet["status"][] => {
+  switch (role) {
+    case "admin":
+      return ["open", "closed"];
+    case "employe":
+      return ["in_realisation", "in_validation"];
+    case "client":
+      return ["validate", "need_revision"];
+    default:
+      return [];
+  }
+};
 
-export default function ProjectStatusDot({ project }: ProjectStatusDotProps) {
-  const [status, setStatus] = useState<Projet["statut"]>(project.statut);
+export default function ProjectStatusDot({
+  project,
+  onStatusChange,
+}: ProjectStatusDotProps) {
+  const [status, setStatus] = useState<Projet["status"]>(project.status);
+  const { updateProject } = useProjects();
+  const { userRole } = useRole();
   const currentConfig = statusConfigs[status];
+  const availableStatuses = getAvailableStatuses(userRole);
 
-  const handleStatusChange = (newStatus: Projet["statut"]) => {
-    setStatus(newStatus);
-    // Ici, appeler une mutation pour sauvegarder le nouveau statut dans la base de données
+  const handleStatusChange = async (newStatus: Projet["status"]) => {
+    try {
+      const updatedProject = await updateProject(project.id, {
+        status: newStatus,
+      });
+
+      if (updatedProject) {
+        setStatus(newStatus);
+        if (onStatusChange) {
+          onStatusChange(newStatus);
+        }
+      }
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour du statut:", err);
+    }
   };
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild className="p-0">
         <Button
           variant="ghost"
-          className="h-7 px-2 hover:!bg-transparent cursor-pointer"
+          className="h-7 hover:!bg-transparent cursor-pointer"
         >
-          <div className="flex items-center gap-2">
-            <span
-              className="text-sm font-medium rounded-sm px-2 py-1"
-              style={{
-                background: currentConfig.bgColor,
-              }}
-            >
-              {currentConfig.label}
-            </span>
-          </div>
+          <span
+            className="text-sm font-medium rounded-sm px-2 py-1"
+            style={{
+              background: currentConfig.bgColor,
+            }}
+          >
+            {currentConfig.label}
+          </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-1">
+      <PopoverContent className="w-56 p-1" align="end">
         <div className="flex flex-col gap-1">
           {availableStatuses.map((s) => {
             const config = statusConfigs[s];
@@ -92,7 +128,7 @@ export default function ProjectStatusDot({ project }: ProjectStatusDotProps) {
                 key={s}
                 variant="ghost"
                 className={cn(
-                  "flex items-center justify-between px-2 py-1.5 text-sm font-normal",
+                  "flex items-center justify-between px-2 py-1.5 text-sm font-normal cursor-pointer",
                   status === s && "bg-gray-100/2"
                 )}
                 onClick={() => handleStatusChange(s)}

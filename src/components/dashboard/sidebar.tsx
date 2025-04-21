@@ -14,6 +14,7 @@ import { ThemeToggle } from "../common/ThemeToggle";
 import logoMpa from "@/assets/Logo_MP_Agency-removebg.png";
 import { Separator } from "../ui/separator";
 import { UserMenu } from "../common/UserMenu";
+import { useRole } from "@/hooks/useRole";
 
 const items = [
   {
@@ -25,11 +26,13 @@ const items = [
     title: "statistique",
     url: "/dashboard",
     icon: ChartNoAxesCombined,
+    adminOnly: true,
   },
   {
     title: "Gestion des utilisateurs",
     url: "/users",
     icon: Users,
+    adminOnly: true,
   },
   {
     title: "Gestion des projets",
@@ -39,6 +42,7 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const { isAdmin } = useRole();
   const [collapsed, setCollapsed] = useState(false);
 
   const toggleSidebar = () => {
@@ -49,7 +53,7 @@ export function AppSidebar() {
     <ThemeProvider defaultTheme="system" storageKey="ui-theme">
       <div
         className={cn(
-          "min-h-screen border-r bg-card px-3 py-4 transition-all duration-300",
+          "min-h-screen border-r bg-card px-3 py-4 transition-all duration-300 backdrop-blur supports-[backdrop-filter]:bg-background/60",
           collapsed ? "w-16" : "w-64"
         )}
       >
@@ -79,25 +83,27 @@ export function AppSidebar() {
             </div>
             <Separator orientation="horizontal" className="my-2" />
             <nav className="space-y-2">
-              {items.map((item) => (
-                <NavLink
-                  key={item.title}
-                  to={item.url}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
-                      isActive
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground",
-                      collapsed && "justify-center px-2"
-                    )
-                  }
-                  title={collapsed ? item.title : ""}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {!collapsed && item.title}
-                </NavLink>
-              ))}
+              {items
+                .filter((item) => !(item.adminOnly && !isAdmin))
+                .map((item) => (
+                  <NavLink
+                    key={item.title}
+                    to={item.url}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
+                        isActive
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground",
+                        collapsed && "justify-center px-2"
+                      )
+                    }
+                    title={collapsed ? item.title : ""}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {!collapsed && item.title}
+                  </NavLink>
+                ))}
             </nav>
           </div>
 

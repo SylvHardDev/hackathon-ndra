@@ -1,8 +1,9 @@
 import { supabase } from "@/lib/supabase";
-import { AuthError } from "@supabase/supabase-js";
+import { AuthError, User } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
 export default function useAuth() {
+  const [user, setUser] = useState<User | null>(null);
   const [userStatus, setUserStatus] = useState<
     "loading" | "signed-in" | "signed-out"
   >("loading");
@@ -13,11 +14,14 @@ export default function useAuth() {
       async (event, session) => {
         try {
           if (event === "INITIAL_SESSION") {
+            setUser(session?.user ?? null);
             setUserStatus(session ? "signed-in" : "signed-out");
           } else if (event === "SIGNED_IN") {
+            setUser(session?.user ?? null);
             setUserStatus("signed-in");
             setError(null);
           } else if (event === "SIGNED_OUT") {
+            setUser(null);
             setUserStatus("signed-out");
             setError(null);
           } else if (event === "PASSWORD_RECOVERY") {
@@ -27,6 +31,7 @@ export default function useAuth() {
             // Le token a été rafraîchi avec succès
             console.log("Token refreshed successfully");
           } else if (event === "USER_UPDATED") {
+            setUser(session?.user ?? null);
             // Les informations de l'utilisateur ont été mises à jour
             console.log("User information updated");
           }
@@ -34,6 +39,7 @@ export default function useAuth() {
           console.error("Auth state change error:", err);
           setError(err as AuthError);
           setUserStatus("signed-out");
+          setUser(null);
         }
       }
     );
@@ -43,5 +49,5 @@ export default function useAuth() {
     };
   }, []);
 
-  return { userStatus, error };
+  return { user, userStatus, error };
 }

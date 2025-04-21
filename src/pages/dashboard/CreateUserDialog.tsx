@@ -1,70 +1,78 @@
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
+  DialogTrigger,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
   Select,
-  SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectContent,
+  SelectItem,
 } from "@/components/ui/select";
-import { useCreateUser } from "@/hooks/useCreateUser";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-
-const formSchema = z.object({
-  email: z.string().email("Email invalide"),
-  password: z
-    .string()
-    .min(6, "Le mot de passe doit contenir au moins 6 caractères"),
-  nom: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  role: z.enum(["admin", "employe", "client"], {
-    required_error: "Veuillez sélectionner un rôle",
-  }),
-});
-
-type FormData = z.infer<typeof formSchema>;
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CreateUserDialog() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState("user");
   const [open, setOpen] = useState(false);
-  const { mutate: createUser, isPending } = useCreateUser();
+  const { toast } = useToast();
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      nom: "",
-      role: "client",
-    },
-  });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const onSubmit = (data: FormData) => {
-    createUser(data, {
-      onSuccess: () => {
-        setOpen(false);
-        form.reset();
-      },
-    });
+    try {
+      // Créer l'utilisateur dans Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+
+      // Créer l'utilisateur dans la table accounts
+      const { error: dbError } = await supabase.from("accounts").insert([
+        {
+          id: authData.user?.id,
+          email,
+          full_name: fullName,
+          role,
+        },
+      ]);
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Succès",
+        description: "L'utilisateur a été créé avec succès",
+      });
+
+      // Réinitialiser le formulaire
+      setEmail("");
+      setPassword("");
+      setFullName("");
+      setRole("user");
+      setOpen(false);
+    } catch (error) {
+      console.error("Erreur lors de la création de l'utilisateur:", error);
+      toast({
+        title: "Erreur",
+        description:
+          "Une erreur est survenue lors de la création de l'utilisateur",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -72,90 +80,76 @@ export default function CreateUserDialog() {
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
-          Ajouter un utilisateur
+          Nouvel utilisateur
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
-          <DialogDescription>
-            Remplissez les informations pour créer un nouveau compte
-            utilisateur.
-          </DialogDescription>
+          <DialogTitle className="text-3xl font-bold">
+            Créer un utilisateur
+          </DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="email@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-1">
+            <Label htmlFor="email" className="mb-2">
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Entrez l'email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Mot de passe</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div className="grid gap-1">
+            <Label htmlFor="password" className="mb-2">
+              Mot de passe
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Entrez le mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
-            <FormField
-              control={form.control}
-              name="nom"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nom</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div className="grid gap-1">
+            <Label htmlFor="fullName" className="mb-2">
+              Nom complet
+            </Label>
+            <Input
+              id="fullName"
+              type="text"
+              placeholder="Entrez le nom complet"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
             />
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rôle</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez un rôle" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="admin">Administrateur</SelectItem>
-                      <SelectItem value="employe">Collaborateur</SelectItem>
-                      <SelectItem value="client">Client</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Création..." : "Créer l'utilisateur"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </div>
+          <div className="grid gap-1">
+            <Label htmlFor="role" className="mb-2">
+              Rôle
+            </Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger className="w-1/2">
+                <SelectValue placeholder="Choisissez un rôle" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Administrateur</SelectItem>
+                <SelectItem value="user">Utilisateur</SelectItem>
+                <SelectItem value="client">Client</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button type="submit" className="w-full">
+              Créer l'utilisateur
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
