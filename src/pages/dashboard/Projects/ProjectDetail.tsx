@@ -80,7 +80,7 @@ export default function ProjectDetail({
           )}
         >
           <Card className="p-6 relative">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-6">
               {isEditing ? (
                 <div className="flex-1 space-y-2">
                   <Input

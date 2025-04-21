@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useProjectAssignments } from "@/hooks/useProjectAssignments";
 import { useRole } from "@/hooks/useRole";
-import { Calendar, FileText, Loader2 } from "lucide-react";
+import { Calendar, FileText, Loader2, User } from "lucide-react";
 import AssignUsersDialog from "../AssignUsersDialog";
 import RemoveUserDialog from "../RemoveUserDialog";
 
@@ -47,7 +47,8 @@ export function ProjectInfoSection({
             </div>
           )}
           <div>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex gap-3 items-center mb-4">
+              <User className="text-gray-500" />
               <h3 className="text-lg font-semibold">Collaborateurs</h3>
             </div>
             {assignmentsLoading ? (
@@ -84,7 +85,8 @@ export function ProjectInfoSection({
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex gap-3 items-center mb-4">
+              <User className="text-gray-500" />
               <h3 className="text-lg font-semibold">Clients</h3>
             </div>
             {assignmentsLoading ? (

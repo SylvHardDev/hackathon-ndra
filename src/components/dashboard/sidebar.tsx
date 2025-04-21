@@ -53,7 +53,7 @@ export function AppSidebar() {
     <ThemeProvider defaultTheme="system" storageKey="ui-theme">
       <div
         className={cn(
-          "min-h-screen border-r bg-card px-3 py-4 transition-all duration-300",
+          "min-h-screen border-r bg-card px-3 py-4 transition-all duration-300 backdrop-blur supports-[backdrop-filter]:bg-background/60",
           collapsed ? "w-16" : "w-64"
         )}
       >
