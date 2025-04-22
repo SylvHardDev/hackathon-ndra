@@ -128,10 +128,38 @@ const KanbanColumn = ({
     id,
   });
 
+  // Définition des couleurs pour chaque statut
+  const statusColors: Record<string, { bg: string; text: string }> = {
+    open: {
+      bg: "rgba(100, 5, 100, 0.8)",
+      text: "#f2f2f2",
+    },
+    in_realisation: {
+      bg: "rgba(38, 132, 255, 0.8)",
+      text: "#f2f2f2",
+    },
+    in_validation: {
+      bg: "rgba(255, 171, 0, 0.8)",
+      text: "#f2f2f2",
+    },
+    need_revision: {
+      bg: "rgba(255, 86, 48, 0.8)",
+      text: "#f2f2f2",
+    },
+    validate: {
+      bg: "rgba(0, 200, 0, 0.8)",
+      text: "#f2f2f2",
+    },
+    closed: {
+      bg: "rgba(0, 245, 0, 0.8)",
+      text: "#f2f2f2",
+    },
+  };
+
   return (
     <div
       ref={setNodeRef}
-      className={`space-y-4 p-2 rounded-lg ${
+      className={`space-y-4 p-2 rounded-lg border-r border-gray-200/10 h-full ${
         isOver
           ? isAllowed
             ? "bg-green-50/5 border border-green-500"
@@ -139,8 +167,16 @@ const KanbanColumn = ({
           : ""
       }`}
     >
-      <h3 className="text-sm font-semibold mb-2">{title}</h3>
-      <div className="space-y-2 min-h-[100px]">{children}</div>
+      <h3
+        className={`text-sm font-semibold mb-2 p-2 rounded-md`}
+        style={{
+          backgroundColor: statusColors[id].bg,
+          color: statusColors[id].text,
+        }}
+      >
+        {title}
+      </h3>
+      <div className="space-y-1 min-h-[100px] h-full">{children}</div>
     </div>
   );
 };
@@ -369,7 +405,7 @@ export default function ProjectListView({
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-6 gap-4">
+          <div className="grid grid-cols-6 gap-2 h-full">
             {statusColumns.map((column) => (
               <KanbanColumn
                 key={column.id}
@@ -399,7 +435,7 @@ export default function ProjectListView({
           <DragOverlay>
             {activeId ? (
               <Card className="p-4 shadow-lg">
-                <h4 className="font-medium mb-2">
+                <h4 className="font-medium mb-1">
                   {projects.find((p) => p.id === activeId)?.title}
                 </h4>
               </Card>
