@@ -31,7 +31,6 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { Card } from "@/components/ui/card";
 import { SortableCard } from "./SortableCard";
 
@@ -89,8 +88,8 @@ const ALLOWED_TRANSITIONS: Record<
 // Définition des statuts accessibles par rôle
 const ROLE_STATUSES: Record<UserRole, ProjectStatus[]> = {
   admin: ["open", "closed"],
-  employee: ["in_realisation", "in_validation"],
-  client: ["need_revision", "validate"],
+  employee: ["open", "in_realisation", "in_validation", "need_revision"],
+  client: ["in_validation", "need_revision", "validate"],
 };
 
 // Définition du flux de changement de statut
