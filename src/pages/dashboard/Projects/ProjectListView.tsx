@@ -88,9 +88,9 @@ const ALLOWED_TRANSITIONS: Record<
 
 // Définition des statuts accessibles par rôle
 const ROLE_STATUSES: Record<UserRole, ProjectStatus[]> = {
-  admin: ["open", "closed", "validate"],
-  employee: ["open", "in_realisation", "in_validation", "need_revision"],
-  client: ["in_validation", "need_revision", "validate"],
+  admin: ["open", "closed"],
+  employee: ["in_realisation", "in_validation"],
+  client: ["need_revision", "validate"],
 };
 
 // Définition du flux de changement de statut

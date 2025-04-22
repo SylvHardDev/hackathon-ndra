@@ -76,8 +76,7 @@ export default function CreateProjectDialog() {
       console.error(error);
       toast({
         title: "Erreur",
-        description:
-          (error as Error).message || "Impossible de créer le projet.",
+        description: "Une erreur est survenue lors de la création du projet.",
         variant: "destructive",
       });
     } finally {
