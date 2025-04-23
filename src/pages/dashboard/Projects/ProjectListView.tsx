@@ -33,6 +33,14 @@ import {
 } from "@dnd-kit/sortable";
 import { Card } from "@/components/ui/card";
 import { SortableCard } from "./SortableCard";
+import { Calendar, Video, Paintbrush } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useProjectUsers } from "@/hooks/useProjectUsers";
 
 export type ProjectType = "video" | "design";
 
@@ -177,6 +185,56 @@ const KanbanColumn = ({
         {title}
       </h3>
       <div className="space-y-1 min-h-[100px] h-full">{children}</div>
+    </div>
+  );
+};
+
+interface UserAvatarProps {
+  name: string;
+  className?: string;
+}
+
+const UserAvatar = ({ name, className = "" }: UserAvatarProps) => {
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div
+      className={`w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium ${className}`}
+    >
+      {initials}
+    </div>
+  );
+};
+
+const ProjectUsers = ({ projectId }: { projectId: number }) => {
+  const { users, loading } = useProjectUsers(projectId);
+
+  if (loading)
+    return <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />;
+
+  return (
+    <div className="flex -space-x-2">
+      {users.map((user, index) => (
+        <TooltipProvider key={user.account.id}>
+          <Tooltip>
+            <TooltipTrigger>
+              <UserAvatar
+                name={user.account.full_name}
+                className={`border-2 border-background ${
+                  index > 0 ? "-ml-2" : ""
+                }`}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{user.account.full_name}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ))}
     </div>
   );
 };
@@ -356,6 +414,9 @@ export default function ProjectListView({
                 </TableHead>
                 <TableHead className="w-[150px] font-semibold">Type</TableHead>
                 <TableHead className="w-[150px] font-semibold">
+                  Utilisateurs
+                </TableHead>
+                <TableHead className="w-[150px] font-semibold">
                   Date de création
                 </TableHead>
               </TableRow>
@@ -368,12 +429,21 @@ export default function ProjectListView({
                   onMouseEnter={() => setSelectedProjectId(project.id)}
                 >
                   <TableCell className="font-medium">
-                    <Link
-                      to={`/projects/${project.id}`}
-                      className="hover:underline"
-                    >
-                      {project.title}
-                    </Link>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            to={`/projects/${project.id}`}
+                            className="hover:underline"
+                          >
+                            {project.title}
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{project.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                   <TableCell>
                     <ProjectStatusDot
@@ -384,12 +454,25 @@ export default function ProjectListView({
                     />
                   </TableCell>
                   <TableCell>
-                    <span className="px-3 py-2 text-xs font-medium rounded-sm bg-gray-100/2">
-                      {project.type}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {project.type === "video" ? (
+                        <Video className="h-4 w-4" />
+                      ) : (
+                        <Paintbrush className="h-4 w-4" />
+                      )}
+                      <span className="px-3 py-2 text-xs font-medium rounded-sm bg-gray-100/2">
+                        {project.type}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
-                    {new Date(project.created_at).toLocaleDateString()}
+                    <ProjectUsers projectId={project.id} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
