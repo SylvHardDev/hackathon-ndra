@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { useProjectAssignments } from "@/hooks/useProjectAssignments";
+import { useProjectUsers } from "@/hooks/useProjectUsers";
 import { useRole } from "@/hooks/useRole";
 import { Calendar, FileText, Loader2, User } from "lucide-react";
 import AssignUsersDialog from "../AssignUsersDialog";
@@ -24,18 +24,11 @@ export function ProjectInfoSection({
   projectCreatedAt,
 }: ProjectInfoSectionProps) {
   const { isAdmin } = useRole();
-  const {
-    allAccounts,
-    assignedIds,
-    loading: assignmentsLoading,
-  } = useProjectAssignments(projectId);
+  const { users, loading: usersLoading } = useProjectUsers(projectId);
 
-  const assignedUsers = allAccounts.filter((acct) =>
-    assignedIds.includes(acct.id)
-  );
-
-  const collaborators = assignedUsers.filter((user) => user.role === "employe");
-  const clients = assignedUsers.filter((user) => user.role === "client");
+  const admins = users.filter((user) => user.account.role === "admin");
+  const collaborators = users.filter((user) => user.account.role === "employe");
+  const clients = users.filter((user) => user.account.role === "client");
 
   return (
     <Card>
@@ -46,12 +39,57 @@ export function ProjectInfoSection({
               <AssignUsersDialog projectId={projectId} />
             </div>
           )}
+
+          {/* Section Administrateurs */}
+          {isAdmin && (
+            <div>
+              <div className="flex gap-3 items-center mb-4">
+                <User className="text-gray-500" />
+                <h3 className="text-lg font-semibold">Administrateurs</h3>
+              </div>
+              {usersLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {admins.map((user) => (
+                    <div
+                      key={user.account.id}
+                      className="flex items-center justify-between p-2 hover:bg-gray-50/5 rounded"
+                    >
+                      <div>
+                        <p className="font-medium">{user.account.nom}</p>
+                        <p className="text-sm text-gray-500">
+                          {user.account.role}
+                        </p>
+                      </div>
+                      {isAdmin && (
+                        <RemoveUserDialog
+                          projectId={projectId}
+                          userId={user.account.id}
+                          userName={user.account.nom}
+                        />
+                      )}
+                    </div>
+                  ))}
+                  {admins.length === 0 && (
+                    <p className="text-gray-500 text-center py-4">
+                      Aucun administrateur assigné
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Section Collaborateurs */}
           <div>
             <div className="flex gap-3 items-center mb-4">
               <User className="text-gray-500" />
               <h3 className="text-lg font-semibold">Collaborateurs</h3>
             </div>
-            {assignmentsLoading ? (
+            {usersLoading ? (
               <div className="flex justify-center py-4">
                 <Loader2 className="animate-spin" />
               </div>
@@ -59,18 +97,20 @@ export function ProjectInfoSection({
               <div className="space-y-2">
                 {collaborators.map((user) => (
                   <div
-                    key={user.id}
+                    key={user.account.id}
                     className="flex items-center justify-between p-2 hover:bg-gray-50/5 rounded"
                   >
                     <div>
-                      <p className="font-medium">{user.nom}</p>
-                      <p className="text-sm text-gray-500">{user.role}</p>
+                      <p className="font-medium">{user.account.nom}</p>
+                      <p className="text-sm text-gray-500">
+                        {user.account.role}
+                      </p>
                     </div>
                     {isAdmin && (
                       <RemoveUserDialog
                         projectId={projectId}
-                        userId={user.id}
-                        userName={user.nom}
+                        userId={user.account.id}
+                        userName={user.account.nom}
                       />
                     )}
                   </div>
@@ -84,12 +124,13 @@ export function ProjectInfoSection({
             )}
           </div>
 
+          {/* Section Clients */}
           <div>
             <div className="flex gap-3 items-center mb-4">
               <User className="text-gray-500" />
               <h3 className="text-lg font-semibold">Clients</h3>
             </div>
-            {assignmentsLoading ? (
+            {usersLoading ? (
               <div className="flex justify-center py-4">
                 <Loader2 className="animate-spin" />
               </div>
@@ -97,18 +138,20 @@ export function ProjectInfoSection({
               <div className="space-y-2">
                 {clients.map((user) => (
                   <div
-                    key={user.id}
+                    key={user.account.id}
                     className="flex items-center justify-between p-2 hover:bg-gray-50/5 rounded"
                   >
                     <div>
-                      <p className="font-medium">{user.nom}</p>
-                      <p className="text-sm text-gray-500">{user.role}</p>
+                      <p className="font-medium">{user.account.nom}</p>
+                      <p className="text-sm text-gray-500">
+                        {user.account.role}
+                      </p>
                     </div>
                     {isAdmin && (
                       <RemoveUserDialog
                         projectId={projectId}
-                        userId={user.id}
-                        userName={user.nom}
+                        userId={user.account.id}
+                        userName={user.account.nom}
                       />
                     )}
                   </div>

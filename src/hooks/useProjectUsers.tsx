@@ -31,7 +31,8 @@ export function useProjectUsers(projectId: number) {
           )
         `
         )
-        .eq("project_id", projectId);
+        .eq("project_id", projectId)
+        .order("account_id", { ascending: true });
 
       if (error) throw error;
       console.log("Raw data from Supabase:", data);
@@ -60,7 +61,6 @@ export function useProjectUsers(projectId: number) {
           account_id,
           account:accounts (
             id,
-            email,
             nom,
             role
           )
