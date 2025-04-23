@@ -159,11 +159,11 @@ const KanbanColumn = ({
   return (
     <div
       ref={setNodeRef}
-      className={`space-y-4 p-2 rounded-lg border-r border-gray-200/10 h-full ${
+      className={`space-y-4 p-2 border-r border-gray-200/10 h-full ${
         isOver
           ? isAllowed
-            ? "bg-green-50/5 border border-green-500"
-            : "bg-red-50/5 border border-red-500"
+            ? "rounded-lg bg-green-50/5 border border-green-500"
+            : "rounded-lg bg-red-50/5 border border-red-500"
           : ""
       }`}
     >
@@ -405,7 +405,7 @@ export default function ProjectListView({
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-6 gap-2 h-full">
+          <div className="grid grid-cols-6 gap-2 min-h-[70vh]">
             {statusColumns.map((column) => (
               <KanbanColumn
                 key={column.id}
@@ -434,7 +434,7 @@ export default function ProjectListView({
           </div>
           <DragOverlay>
             {activeId ? (
-              <Card className="p-4 shadow-lg">
+              <Card className="p-4 shadow-lg !gap-3">
                 <h4 className="font-medium mb-1">
                   {projects.find((p) => p.id === activeId)?.title}
                 </h4>
