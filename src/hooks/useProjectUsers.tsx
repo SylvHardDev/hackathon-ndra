@@ -6,8 +6,7 @@ export interface ProjectUser {
   account_id: number;
   account: {
     id: number;
-    email: string;
-    full_name: string;
+    nom: string;
     role: string;
   };
 }
@@ -24,19 +23,22 @@ export function useProjectUsers(projectId: number) {
         .select(
           `
           project_id,
-          account:accounts!project_account_account_id_fkey (
+          account_id,
+          account:accounts (
             id,
-            email,
-            full_name,
+            nom,
             role
           )
         `
         )
-        .eq("project_id", projectId);
+        .eq("project_id", projectId)
+        .order("account_id", { ascending: true });
 
       if (error) throw error;
+      console.log("Raw data from Supabase:", data);
       setUsers(data as unknown as ProjectUser[]);
     } catch (err) {
+      console.error("Error fetching users:", err);
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setLoading(false);
@@ -59,8 +61,7 @@ export function useProjectUsers(projectId: number) {
           account_id,
           account:accounts (
             id,
-            email,
-            full_name,
+            nom,
             role
           )
         `

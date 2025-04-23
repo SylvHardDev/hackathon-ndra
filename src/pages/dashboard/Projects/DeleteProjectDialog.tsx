@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface DeleteProjectDialogProps {
   projectId: number;
@@ -16,6 +17,7 @@ export default function DeleteProjectDialog({
 }: DeleteProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleDeleteProject = async () => {
     try {
@@ -29,16 +31,26 @@ export default function DeleteProjectDialog({
 
       // Puis supprimer le projet
       const { error: projectError } = await supabase
-        .from("projects")
+        .from("project")
         .delete()
         .eq("id", projectId);
 
       if (projectError) throw projectError;
 
+      toast({
+        title: "Succès",
+        description: "Le projet a été supprimé avec succès.",
+      });
+
       navigate("/projects");
     } catch (error) {
       console.error("Erreur lors de la suppression du projet:", error);
-      throw error;
+      toast({
+        title: "Erreur",
+        description:
+          "Une erreur est survenue lors de la suppression du projet.",
+        variant: "destructive",
+      });
     }
   };
 
