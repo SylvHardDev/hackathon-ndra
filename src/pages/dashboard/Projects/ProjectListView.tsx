@@ -58,6 +58,7 @@ export interface Projet {
   type: ProjectType;
   created_at: string;
   description: string;
+  users?: ProjectUser[];
 }
 
 interface ProjectUser {
