@@ -60,6 +60,16 @@ export interface Projet {
   description: string;
 }
 
+interface ProjectUser {
+  project_id: number;
+  account_id: number;
+  account: {
+    id: number;
+    nom: string;
+    role: string;
+  };
+}
+
 interface ProjectListViewProps {
   searchQuery: string;
   statusFilter: string;
@@ -216,25 +226,31 @@ const ProjectUsers = ({ projectId }: { projectId: number }) => {
   if (loading)
     return <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />;
 
+  console.log("Users data:", users);
+
   return (
     <div className="flex -space-x-2">
-      {users.map((user, index) => (
-        <TooltipProvider key={user.account.id}>
-          <Tooltip>
-            <TooltipTrigger>
-              <UserAvatar
-                name={user.account.full_name}
-                className={`border-2 border-background ${
-                  index > 0 ? "-ml-2" : ""
-                }`}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{user.account.full_name}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ))}
+      {users.map((user, index) => {
+        console.log("User account:", user.account);
+        console.log("User nom:", user.account.nom);
+        return (
+          <TooltipProvider key={user.account.id}>
+            <Tooltip>
+              <TooltipTrigger>
+                <UserAvatar
+                  name={user.account.nom}
+                  className={`border-2 border-background ${
+                    index > 0 ? "-ml-2" : ""
+                  }`}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{user.account.nom}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      })}
     </div>
   );
 };
@@ -414,7 +430,7 @@ export default function ProjectListView({
                 </TableHead>
                 <TableHead className="w-[150px] font-semibold">Type</TableHead>
                 <TableHead className="w-[150px] font-semibold">
-                  Utilisateurs
+                  Assignés
                 </TableHead>
                 <TableHead className="w-[150px] font-semibold">
                   Date de création
