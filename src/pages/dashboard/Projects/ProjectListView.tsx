@@ -434,7 +434,7 @@ export default function ProjectListView({
           </div>
           <DragOverlay>
             {activeId ? (
-              <Card className="p-4 shadow-lg !gap-3">
+              <Card className="p-4 shadow-lg">
                 <h4 className="font-medium mb-1">
                   {projects.find((p) => p.id === activeId)?.title}
                 </h4>

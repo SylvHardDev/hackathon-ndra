@@ -28,7 +28,7 @@ export function SortableCard({ project }: SortableCardProps) {
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <Card
-        className={`p-4 cursor-move hover:shadow-md transition-shadow ${
+        className={`p-4 cursor-move hover:shadow-md transition-shadow gap-2${
           isDragging ? "shadow-lg" : ""
         }`}
       >
