@@ -505,7 +505,7 @@ export default function ProjectListView({
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-6 gap-2 min-h-[70vh]">
+          <div className="grid grid-cols-6 min-h-[70vh]">
             {statusColumns.map((column) => (
               <KanbanColumn
                 key={column.id}
