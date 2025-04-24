@@ -1,11 +1,11 @@
 import useAuth from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 
 export default function AuthLayout() {
   const { userStatus } = useAuth();
-  const { isAdmin, isLoading } = useRole();
-  const location = useLocation();
+  const { isLoading } = useRole();
+  // const location = useLocation();
   const accessToken = localStorage.getItem("token");
   const refreshToken = localStorage.getItem("refresh_token");
 
