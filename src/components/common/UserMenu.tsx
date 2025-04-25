@@ -19,14 +19,12 @@ import {
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { useUser } from "@/hooks/useUser";
-import { useRole } from "@/hooks/useRole";
 import { useSession } from "@/hooks/useSession";
 
 export function UserMenu() {
   const { logout, isLoading } = useLogout();
 
   const { data } = useSession();
-  const { userRole } = useRole();
 
   const { data: userInfo } = useUser(data?.session?.user.id);
 
