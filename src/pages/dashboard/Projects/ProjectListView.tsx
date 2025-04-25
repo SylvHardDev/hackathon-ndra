@@ -85,25 +85,6 @@ type ProjectStatus =
   | "closed";
 type UserRole = "admin" | "employee" | "client";
 
-// Définition des transitions autorisées par rôle
-const ALLOWED_TRANSITIONS: Record<
-  UserRole,
-  Partial<Record<ProjectStatus, ProjectStatus[]>>
-> = {
-  admin: {
-    validate: ["closed"],
-    closed: ["open"],
-  },
-  employee: {
-    in_validation: ["in_realisation"],
-    in_realisation: ["in_validation"],
-  },
-  client: {
-    need_revision: ["validate"],
-    validate: ["need_revision", "validate"],
-  },
-};
-
 // Définition des statuts accessibles par rôle
 const ROLE_STATUSES: Record<UserRole, ProjectStatus[]> = {
   admin: ["open", "closed"],
@@ -265,9 +246,6 @@ export default function ProjectListView({
   const { assignedIds, loading: assignmentsLoading } =
     useMyAssignedProjectIds();
   const { isAdmin } = useRole();
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
-    null
-  );
   const [activeId, setActiveId] = useState<number | null>(null);
   const [currentDragStatus, setCurrentDragStatus] = useState<{
     isOver: boolean;
@@ -384,7 +362,8 @@ export default function ProjectListView({
     try {
       await updateProject(activeProject.id, { status: newStatus });
       toast.success("Statut du projet mis à jour avec succès");
-    } catch (error) {
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour du statut:", err);
       toast.error("Erreur lors de la mise à jour du statut");
     }
 
@@ -440,11 +419,7 @@ export default function ProjectListView({
             </TableHeader>
             <TableBody>
               {filteredProjects.map((project) => (
-                <TableRow
-                  key={project.id}
-                  className="hover:bg-gray-50/2"
-                  onMouseEnter={() => setSelectedProjectId(project.id)}
-                >
+                <TableRow key={project.id} className="hover:bg-gray-50/2">
                   <TableCell className="font-medium">
                     <TooltipProvider>
                       <Tooltip>
