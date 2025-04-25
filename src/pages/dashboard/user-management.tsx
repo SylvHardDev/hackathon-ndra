@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Trash2 } from "lucide-react";
 import CreateUserDialog from "./CreateUserDialog";
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -20,109 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
-
-interface User {
-  id: number;
-  email: string;
-  nom: string;
-  role: string;
-}
+import { useUserManagement } from "@/hooks/useUserManagement";
 
 export function UserManagement() {
   const { isAdmin } = useRole();
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
-
-  const fetchUsers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("accounts")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setUsers(data || []);
-    } catch (error) {
-      console.error("Erreur lors de la récupération des utilisateurs:", error);
-      toast({
-        title: "Erreur",
-        description:
-          "Une erreur est survenue lors de la récupération des utilisateurs",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateUserRole = async (userId: number, newRole: string) => {
-    try {
-      const { error } = await supabase
-        .from("accounts")
-        .update({ role: newRole })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId ? { ...user, role: newRole } : user
-        )
-      );
-
-      toast({
-        title: "Succès",
-        description: "Le rôle de l'utilisateur a été mis à jour",
-      });
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du rôle:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour du rôle",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteUser = async (userId: number) => {
-    try {
-      const { error } = await supabase
-        .from("accounts")
-        .delete()
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-
-      toast({
-        title: "Succès",
-        description: "L'utilisateur a été supprimé",
-      });
-    } catch (error) {
-      console.error("Erreur lors de la suppression de l'utilisateur:", error);
-      toast({
-        title: "Erreur",
-        description:
-          "Une erreur est survenue lors de la suppression de l'utilisateur",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  // const filteredUsers = users.filter(
-  //   (user) =>
-  //     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //     user.nom.toLowerCase().includes(searchQuery.toLowerCase())
-  // );
+  const { users, loading, updateUserRole, deleteUser } = useUserManagement();
 
   if (loading) {
     return (

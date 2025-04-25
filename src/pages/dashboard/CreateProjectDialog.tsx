@@ -18,53 +18,23 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Plus, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { useProjectManagement } from "@/hooks/useProjectManagement";
 
 export default function CreateProjectDialog() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [projectType, setProjectType] = useState<"design" | "video">("design");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const { toast } = useToast();
+  const { isLoading, createProject } = useProjectManagement();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    setIsLoading(true);
     try {
-      // Création du projet
-      const { data: project, error: projectError } = await supabase
-        .from("project")
-        .insert([
-          {
-            title,
-            description,
-            type: projectType,
-            status: "open",
-          },
-        ])
-        .select("id")
-        .single();
-
-      if (projectError || !project) throw projectError;
-
-      // Assignation de l'utilisateur courant au projet
-      const { error: assignError } = await supabase
-        .from("project_account")
-        .insert([
-          {
-            project_id: project.id,
-          },
-        ]);
-
-      if (assignError) throw assignError;
-
-      toast({
-        title: "Succès",
-        description: "Le projet a été créé avec succès.",
+      await createProject({
+        title,
+        description,
+        type: projectType,
       });
 
       // Réinitialisation et fermeture
@@ -73,14 +43,8 @@ export default function CreateProjectDialog() {
       setProjectType("design");
       setOpen(false);
     } catch (error) {
+      // Les erreurs sont déjà gérées dans le hook
       console.error(error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la création du projet.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 

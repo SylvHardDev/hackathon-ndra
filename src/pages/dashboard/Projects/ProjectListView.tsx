@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -33,7 +33,14 @@ import {
 } from "@dnd-kit/sortable";
 import { Card } from "@/components/ui/card";
 import { SortableCard } from "./SortableCard";
-import { Calendar, Video, Paintbrush, Kanban, List } from "lucide-react";
+import {
+  Calendar,
+  Video,
+  Paintbrush,
+  Kanban,
+  List,
+  Trash2,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -41,6 +48,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProjectUsers } from "@/hooks/useProjectUsers";
+import { useProjectManagement } from "@/hooks/useProjectManagement";
+import { Button } from "@/components/ui/button";
 
 export type ProjectType = "video" | "design";
 
@@ -242,7 +251,12 @@ export default function ProjectListView({
   statusFilter,
 }: ProjectListViewProps) {
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
-  const { projects, loading: projectsLoading, updateProject } = useProjects();
+  const {
+    projects,
+    loading: projectsLoading,
+    updateProject,
+    refetchProjects,
+  } = useProjects();
   const { assignedIds, loading: assignmentsLoading } =
     useMyAssignedProjectIds();
   const { isAdmin } = useRole();
@@ -252,6 +266,7 @@ export default function ProjectListView({
     isAllowed: boolean;
     targetColumn: Projet["status"];
   } | null>(null);
+  const { deleteProject } = useProjectManagement();
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -371,6 +386,15 @@ export default function ProjectListView({
     setActiveId(null);
   };
 
+  const handleDeleteProject = async (projectId: number) => {
+    try {
+      await deleteProject(projectId);
+      await refetchProjects(); // Rafraîchir la liste après la suppression
+    } catch (error) {
+      console.error("Erreur lors de la suppression du projet:", error);
+    }
+  };
+
   if (projectsLoading || (!isAdmin && assignmentsLoading)) {
     return (
       <div className="space-y-4">
@@ -417,6 +441,11 @@ export default function ProjectListView({
                 <TableHead className="w-[150px] font-semibold">
                   Date de création
                 </TableHead>
+                {isAdmin && (
+                  <TableHead className="w-[100px] font-semibold">
+                    Actions
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -468,6 +497,18 @@ export default function ProjectListView({
                       {new Date(project.created_at).toLocaleDateString()}
                     </div>
                   </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteProject(project.id)}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
