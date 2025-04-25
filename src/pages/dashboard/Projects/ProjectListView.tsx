@@ -33,7 +33,7 @@ import {
 } from "@dnd-kit/sortable";
 import { Card } from "@/components/ui/card";
 import { SortableCard } from "./SortableCard";
-import { Calendar, Video, Paintbrush } from "lucide-react";
+import { Calendar, Video, Paintbrush, Kanban, List } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -390,9 +390,11 @@ export default function ProjectListView({
         >
           <TabsList className="w-1/3 justify-start">
             <TabsTrigger value="list" className="flex-1">
+              <List />
               Liste
             </TabsTrigger>
             <TabsTrigger value="kanban" className="flex-1">
+              <Kanban />
               Kanban
             </TabsTrigger>
           </TabsList>
