@@ -242,7 +242,13 @@ export default function ProjectListView({
   statusFilter,
 }: ProjectListViewProps) {
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
-  const { projects, loading: projectsLoading, updateProject } = useProjects();
+  const {
+    projects,
+    loading: projectsLoading,
+    updateProject,
+    deleteProject,
+    refreshProjects,
+  } = useProjects();
   const { assignedIds, loading: assignmentsLoading } =
     useMyAssignedProjectIds();
   const { isAdmin } = useRole();
@@ -291,8 +297,25 @@ export default function ProjectListView({
   ) => {
     try {
       await updateProject(projectId, { status: newStatus });
+      toast.success("Statut du projet mis à jour avec succès");
     } catch (error) {
       console.error("Erreur lors de la mise à jour du statut:", error);
+      toast.error("Erreur lors de la mise à jour du statut");
+    }
+  };
+
+  const handleDeleteProject = async (projectId: number) => {
+    try {
+      const success = await deleteProject(projectId);
+      if (success) {
+        await refreshProjects();
+        toast.success("Projet supprimé avec succès");
+      } else {
+        throw new Error("Échec de la suppression du projet");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la suppression du projet:", error);
+      toast.error("Erreur lors de la suppression du projet");
     }
   };
 

@@ -85,12 +85,25 @@ export function useProjects() {
 
   const deleteProject = async (id: number) => {
     try {
-      const { error } = await supabase.from("project").delete().eq("id", id);
-
-      if (error) throw error;
       setProjects((prev) => prev.filter((p) => p.id !== id));
+
+      const { error: relationError } = await supabase
+        .from("project_account")
+        .delete()
+        .eq("project_id", id);
+
+      if (relationError) throw relationError;
+
+      const { error: projectError } = await supabase
+        .from("project")
+        .delete()
+        .eq("id", id);
+
+      if (projectError) throw projectError;
+
       return true;
     } catch (err) {
+      await fetchProjects();
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
       return false;
     }
