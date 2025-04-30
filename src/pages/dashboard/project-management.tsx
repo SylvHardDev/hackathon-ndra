@@ -10,19 +10,36 @@ import {
 import CreateProjectDialog from "./CreateProjectDialog";
 import ProjectListView from "./Projects/ProjectListView";
 import { useRole } from "@/hooks/useRole";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useProjects } from "@/hooks/useProjects";
 
 export function ProjectManagement() {
   const { isAdmin } = useRole();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const { refreshProjects } = useProjects();
+  // Référence au composant ProjectListView pour forcer le rafraîchissement
+  const projectListRef = useRef<{ refreshList: () => Promise<void> } | null>(
+    null
+  );
+
+  // Fonction de rafraîchissement qui sera passée à CreateProjectDialog
+  const handleProjectCreated = async () => {
+    // Rafraîchir les projets via le hook useProjects
+    await refreshProjects();
+
+    // Si la référence au composant existe, appeler sa méthode de rafraîchissement
+    if (projectListRef.current) {
+      await projectListRef.current.refreshList();
+    }
+  };
 
   return (
     <div className="space-y-6">
       {isAdmin && (
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Gestion des projets</h1>
-          <CreateProjectDialog />
+          <CreateProjectDialog onProjectCreated={handleProjectCreated} />
         </div>
       )}
 
@@ -51,7 +68,11 @@ export function ProjectManagement() {
         </Select>
       </div>
 
-      <ProjectListView searchQuery={searchQuery} statusFilter={statusFilter} />
+      <ProjectListView
+        searchQuery={searchQuery}
+        statusFilter={statusFilter}
+        ref={projectListRef}
+      />
     </div>
   );
 }

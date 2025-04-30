@@ -19,16 +19,22 @@ import {
 } from "@/components/ui/select";
 import { Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { useProjects } from "@/hooks/useProjects";
 
-export default function CreateProjectDialog() {
+interface CreateProjectDialogProps {
+  onProjectCreated?: () => Promise<void>;
+}
+
+export default function CreateProjectDialog({
+  onProjectCreated,
+}: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [projectType, setProjectType] = useState<"design" | "video">("design");
   const [isLoading, setIsLoading] = useState(false);
-
-  const { toast } = useToast();
+  const { refreshProjects } = useProjects();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,39 +52,39 @@ export default function CreateProjectDialog() {
             status: "open",
           },
         ])
-        .select("id")
+        .select()
         .single();
 
-      if (projectError || !project) throw projectError;
+      if (projectError) {
+        throw projectError;
+      }
 
-      // Assignation de l'utilisateur courant au projet
-      const { error: assignError } = await supabase
-        .from("project_account")
-        .insert([
-          {
-            project_id: project.id,
-          },
-        ]);
+      // Rafraîchir la liste des projets immédiatement
+      // Utiliser à la fois le hook local et la fonction de callback fournie
+      await refreshProjects();
 
-      if (assignError) throw assignError;
+      // Si une fonction callback est fournie, l'appeler aussi
+      if (onProjectCreated) {
+        await onProjectCreated();
+      }
 
-      toast({
-        title: "Succès",
-        description: "Le projet a été créé avec succès.",
-      });
+      toast.success("Le projet a été créé avec succès");
 
-      // Réinitialisation et fermeture
+      // Réinitialisation des champs
       setTitle("");
       setDescription("");
       setProjectType("design");
+
+      // Fermer le dialogue après tout le reste
       setOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la création du projet.",
-        variant: "destructive",
-      });
+      toast.error(
+        `Erreur: ${
+          error?.message ||
+          "Une erreur est survenue lors de la création du projet"
+        }`
+      );
     } finally {
       setIsLoading(false);
     }

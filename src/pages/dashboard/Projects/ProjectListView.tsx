@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
 import {
   Table,
   TableHeader,
@@ -74,6 +74,11 @@ interface ProjectUser {
 interface ProjectListViewProps {
   searchQuery: string;
   statusFilter: string;
+}
+
+// Définir le type de ref qui sera exposé au parent
+export interface ProjectListViewRef {
+  refreshList: () => Promise<void>;
 }
 
 type ProjectStatus =
@@ -237,312 +242,328 @@ const ProjectUsers = ({ projectId }: { projectId: number }) => {
   );
 };
 
-export default function ProjectListView({
-  searchQuery,
-  statusFilter,
-}: ProjectListViewProps) {
-  const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
-  const {
-    projects,
-    loading: projectsLoading,
-    updateProject,
-    deleteProject,
-    refreshProjects,
-  } = useProjects();
-  const { assignedIds, loading: assignmentsLoading } =
-    useMyAssignedProjectIds();
-  const { isAdmin } = useRole();
-  const [activeId, setActiveId] = useState<number | null>(null);
-  const [currentDragStatus, setCurrentDragStatus] = useState<{
-    isOver: boolean;
-    isAllowed: boolean;
-    targetColumn: Projet["status"];
-  } | null>(null);
+const ProjectListView = forwardRef<ProjectListViewRef, ProjectListViewProps>(
+  ({ searchQuery, statusFilter }, ref) => {
+    const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
+    const {
+      projects,
+      loading: projectsLoading,
+      updateProject,
+      deleteProject,
+      refreshProjects,
+    } = useProjects();
+    const { assignedIds, loading: assignmentsLoading } =
+      useMyAssignedProjectIds();
+    const { isAdmin } = useRole();
+    const [activeId, setActiveId] = useState<number | null>(null);
+    const [currentDragStatus, setCurrentDragStatus] = useState<{
+      isOver: boolean;
+      isAllowed: boolean;
+      targetColumn: Projet["status"];
+    } | null>(null);
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 8,
+    // Exposer la fonction refreshList au parent via ref
+    useImperativeHandle(ref, () => ({
+      refreshList: async () => {
+        // Cette fonction sera appelée par le parent pour forcer le rafraîchissement
+        await refreshProjects();
       },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 300,
-        tolerance: 5,
-      },
-    })
-  );
+    }));
 
-  // Filtrer les projets selon le rôle, la recherche et le statut
-  const filteredProjects = (
-    isAdmin
-      ? projects // L'admin voit tous les projets
-      : projects.filter((project) => assignedIds.includes(project.id))
-  ) // Les autres utilisateurs ne voient que leurs projets assignés
-    .filter(
-      (project) =>
-        project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.description
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        project.type.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .filter(
-      (project) => statusFilter === "all" || project.status === statusFilter
+    const sensors = useSensors(
+      useSensor(MouseSensor, {
+        activationConstraint: {
+          distance: 8,
+        },
+      }),
+      useSensor(TouchSensor, {
+        activationConstraint: {
+          delay: 300,
+          tolerance: 5,
+        },
+      })
     );
 
-  const handleStatusChange = async (
-    projectId: number,
-    newStatus: Projet["status"]
-  ) => {
-    try {
-      await updateProject(projectId, { status: newStatus });
-      toast.success("Statut du projet mis à jour avec succès");
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du statut:", error);
-      toast.error("Erreur lors de la mise à jour du statut");
-    }
-  };
+    // Filtrer les projets selon le rôle, la recherche et le statut
+    const filteredProjects = (
+      isAdmin
+        ? projects // L'admin voit tous les projets
+        : projects.filter((project) => assignedIds.includes(project.id))
+    ) // Les autres utilisateurs ne voient que leurs projets assignés
+      .filter(
+        (project) =>
+          project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          project.description
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          project.type.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .filter(
+        (project) => statusFilter === "all" || project.status === statusFilter
+      );
 
-  const handleDeleteProject = async (projectId: number) => {
-    try {
-      const success = await deleteProject(projectId);
-      if (success) {
-        await refreshProjects();
-        toast.success("Projet supprimé avec succès");
-      } else {
-        throw new Error("Échec de la suppression du projet");
+    const handleStatusChange = async (
+      projectId: number,
+      newStatus: Projet["status"]
+    ) => {
+      try {
+        await updateProject(projectId, { status: newStatus });
+        toast.success("Statut du projet mis à jour avec succès");
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour du statut:", error);
+        toast.error("Erreur lors de la mise à jour du statut");
       }
-    } catch (error) {
-      console.error("Erreur lors de la suppression du projet:", error);
-      toast.error("Erreur lors de la suppression du projet");
-    }
-  };
+    };
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as number);
-  };
+    const handleDeleteProject = async (projectId: number) => {
+      try {
+        const success = await deleteProject(projectId);
+        if (success) {
+          await refreshProjects();
+          toast.success("Projet supprimé avec succès");
+        } else {
+          throw new Error("Échec de la suppression du projet");
+        }
+      } catch (error) {
+        console.error("Erreur lors de la suppression du projet:", error);
+        toast.error("Erreur lors de la suppression du projet");
+      }
+    };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
+    const handleDragStart = (event: DragStartEvent) => {
+      setActiveId(event.active.id as number);
+    };
 
-    const activeProject = projects.find((p) => p.id === active.id);
-    const newStatus = over.id as ProjectStatus;
+    const handleDragOver = (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!over) return;
 
-    if (!activeProject || activeProject.status === newStatus) return;
+      const activeProject = projects.find((p) => p.id === active.id);
+      const newStatus = over.id as ProjectStatus;
 
-    const userRole = isAdmin ? "admin" : ("employee" as UserRole);
-    const allowedStatuses = ROLE_STATUSES[userRole];
-    const isStatusAllowed = allowedStatuses.includes(newStatus);
-    const allowedTransitions = STATUS_FLOW[activeProject.status];
-    const isFlowRespected = allowedTransitions.includes(newStatus);
+      if (!activeProject || activeProject.status === newStatus) return;
 
-    setCurrentDragStatus({
-      isOver: true,
-      isAllowed: isStatusAllowed && isFlowRespected,
-      targetColumn: newStatus,
-    });
-  };
+      const userRole = isAdmin ? "admin" : ("employee" as UserRole);
+      const allowedStatuses = ROLE_STATUSES[userRole];
+      const isStatusAllowed = allowedStatuses.includes(newStatus);
+      const allowedTransitions = STATUS_FLOW[activeProject.status];
+      const isFlowRespected = allowedTransitions.includes(newStatus);
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) {
-      setCurrentDragStatus(null);
-      return;
-    }
+      setCurrentDragStatus({
+        isOver: true,
+        isAllowed: isStatusAllowed && isFlowRespected,
+        targetColumn: newStatus,
+      });
+    };
 
-    const activeProject = projects.find((p) => p.id === active.id);
-    const newStatus = over.id as ProjectStatus;
+    const handleDragEnd = async (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over) {
+        setCurrentDragStatus(null);
+        return;
+      }
 
-    if (!activeProject || activeProject.status === newStatus) {
+      const activeProject = projects.find((p) => p.id === active.id);
+      const newStatus = over.id as ProjectStatus;
+
+      if (!activeProject || activeProject.status === newStatus) {
+        setCurrentDragStatus(null);
+        setActiveId(null);
+        return;
+      }
+
+      const userRole = isAdmin ? "admin" : ("employee" as UserRole);
+      const allowedStatuses = ROLE_STATUSES[userRole];
+      const isStatusAllowed = allowedStatuses.includes(newStatus);
+
+      if (!isStatusAllowed) {
+        toast.error("Votre rôle ne permet pas ce changement de statut");
+        setCurrentDragStatus(null);
+        setActiveId(null);
+        return;
+      }
+
+      const allowedTransitions = STATUS_FLOW[activeProject.status];
+      const isFlowRespected = allowedTransitions.includes(newStatus);
+
+      if (!isFlowRespected) {
+        toast.error("Le changement de statut ne respecte pas le flux");
+        setCurrentDragStatus(null);
+        setActiveId(null);
+        return;
+      }
+
+      try {
+        await updateProject(activeProject.id, { status: newStatus });
+        toast.success("Statut du projet mis à jour avec succès");
+      } catch (err) {
+        console.error("Erreur lors de la mise à jour du statut:", err);
+        toast.error("Erreur lors de la mise à jour du statut");
+      }
+
       setCurrentDragStatus(null);
       setActiveId(null);
-      return;
+    };
+
+    if (projectsLoading || (!isAdmin && assignmentsLoading)) {
+      return (
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-[200px]" />
+          <Skeleton className="h-[400px] w-full" />
+        </div>
+      );
     }
 
-    const userRole = isAdmin ? "admin" : ("employee" as UserRole);
-    const allowedStatuses = ROLE_STATUSES[userRole];
-    const isStatusAllowed = allowedStatuses.includes(newStatus);
-
-    if (!isStatusAllowed) {
-      toast.error("Votre rôle ne permet pas ce changement de statut");
-      setCurrentDragStatus(null);
-      setActiveId(null);
-      return;
-    }
-
-    const allowedTransitions = STATUS_FLOW[activeProject.status];
-    const isFlowRespected = allowedTransitions.includes(newStatus);
-
-    if (!isFlowRespected) {
-      toast.error("Le changement de statut ne respecte pas le flux");
-      setCurrentDragStatus(null);
-      setActiveId(null);
-      return;
-    }
-
-    try {
-      await updateProject(activeProject.id, { status: newStatus });
-      toast.success("Statut du projet mis à jour avec succès");
-    } catch (err) {
-      console.error("Erreur lors de la mise à jour du statut:", err);
-      toast.error("Erreur lors de la mise à jour du statut");
-    }
-
-    setCurrentDragStatus(null);
-    setActiveId(null);
-  };
-
-  if (projectsLoading || (!isAdmin && assignmentsLoading)) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-8 w-[200px]" />
-        <Skeleton className="h-[400px] w-full" />
+        <div className="mb-4">
+          <Tabs
+            value={viewMode}
+            onValueChange={(val) => setViewMode(val as "list" | "kanban")}
+            className="w-full"
+          >
+            <TabsList className="w-1/3 justify-start">
+              <TabsTrigger value="list" className="flex-1">
+                <List />
+                Liste
+              </TabsTrigger>
+              <TabsTrigger value="kanban" className="flex-1">
+                <Kanban />
+                Kanban
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {viewMode === "list" && (
+          <div className="rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50/5">
+                  <TableHead className="w-[250px] font-semibold">
+                    Titre
+                  </TableHead>
+                  <TableHead className="w-[150px] font-semibold">
+                    Statut
+                  </TableHead>
+                  <TableHead className="w-[150px] font-semibold">
+                    Type
+                  </TableHead>
+                  <TableHead className="w-[150px] font-semibold">
+                    Assignés
+                  </TableHead>
+                  <TableHead className="w-[150px] font-semibold">
+                    Date de création
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProjects.map((project) => (
+                  <TableRow key={project.id} className="hover:bg-gray-50/2">
+                    <TableCell className="font-medium">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Link
+                              to={`/projects/${project.id}`}
+                              className="hover:underline"
+                            >
+                              {project.title}
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">{project.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                    <TableCell>
+                      <ProjectStatusDot
+                        project={project}
+                        onStatusChange={(newStatus) =>
+                          handleStatusChange(project.id, newStatus)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {project.type === "video" ? (
+                          <Video className="h-4 w-4" />
+                        ) : (
+                          <Paintbrush className="h-4 w-4" />
+                        )}
+                        <span className="px-3 py-2 text-xs font-medium rounded-sm bg-gray-100/2">
+                          {project.type}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <ProjectUsers projectId={project.id} />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(project.created_at).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {viewMode === "kanban" && (
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="grid grid-cols-6 min-h-[70vh]">
+              {statusColumns.map((column) => (
+                <KanbanColumn
+                  key={column.id}
+                  id={column.id}
+                  title={column.title}
+                  isOver={
+                    currentDragStatus?.isOver &&
+                    currentDragStatus.targetColumn === column.id
+                  }
+                  isAllowed={currentDragStatus?.isAllowed || false}
+                >
+                  <SortableContext
+                    items={filteredProjects
+                      .filter((project) => project.status === column.id)
+                      .map((project) => project.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {filteredProjects
+                      .filter((project) => project.status === column.id)
+                      .map((project) => (
+                        <SortableCard key={project.id} project={project} />
+                      ))}
+                  </SortableContext>
+                </KanbanColumn>
+              ))}
+            </div>
+            <DragOverlay>
+              {activeId ? (
+                <Card className="p-4 shadow-lg">
+                  <h4 className="font-medium mb-1">
+                    {projects.find((p) => p.id === activeId)?.title}
+                  </h4>
+                </Card>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
       </div>
     );
   }
+);
 
-  return (
-    <div className="space-y-4">
-      <div className="mb-4">
-        <Tabs
-          value={viewMode}
-          onValueChange={(val) => setViewMode(val as "list" | "kanban")}
-          className="w-full"
-        >
-          <TabsList className="w-1/3 justify-start">
-            <TabsTrigger value="list" className="flex-1">
-              <List />
-              Liste
-            </TabsTrigger>
-            <TabsTrigger value="kanban" className="flex-1">
-              <Kanban />
-              Kanban
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+// Définir un displayName pour forwardRef
+ProjectListView.displayName = "ProjectListView";
 
-      {viewMode === "list" && (
-        <div className="rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50/5">
-                <TableHead className="w-[250px] font-semibold">Titre</TableHead>
-                <TableHead className="w-[150px] font-semibold">
-                  Statut
-                </TableHead>
-                <TableHead className="w-[150px] font-semibold">Type</TableHead>
-                <TableHead className="w-[150px] font-semibold">
-                  Assignés
-                </TableHead>
-                <TableHead className="w-[150px] font-semibold">
-                  Date de création
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProjects.map((project) => (
-                <TableRow key={project.id} className="hover:bg-gray-50/2">
-                  <TableCell className="font-medium">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Link
-                            to={`/projects/${project.id}`}
-                            className="hover:underline"
-                          >
-                            {project.title}
-                          </Link>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">{project.description}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
-                  <TableCell>
-                    <ProjectStatusDot
-                      project={project}
-                      onStatusChange={(newStatus) =>
-                        handleStatusChange(project.id, newStatus)
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {project.type === "video" ? (
-                        <Video className="h-4 w-4" />
-                      ) : (
-                        <Paintbrush className="h-4 w-4" />
-                      )}
-                      <span className="px-3 py-2 text-xs font-medium rounded-sm bg-gray-100/2">
-                        {project.type}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <ProjectUsers projectId={project.id} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(project.created_at).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      {viewMode === "kanban" && (
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="grid grid-cols-6 min-h-[70vh]">
-            {statusColumns.map((column) => (
-              <KanbanColumn
-                key={column.id}
-                id={column.id}
-                title={column.title}
-                isOver={
-                  currentDragStatus?.isOver &&
-                  currentDragStatus.targetColumn === column.id
-                }
-                isAllowed={currentDragStatus?.isAllowed || false}
-              >
-                <SortableContext
-                  items={filteredProjects
-                    .filter((project) => project.status === column.id)
-                    .map((project) => project.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {filteredProjects
-                    .filter((project) => project.status === column.id)
-                    .map((project) => (
-                      <SortableCard key={project.id} project={project} />
-                    ))}
-                </SortableContext>
-              </KanbanColumn>
-            ))}
-          </div>
-          <DragOverlay>
-            {activeId ? (
-              <Card className="p-4 shadow-lg">
-                <h4 className="font-medium mb-1">
-                  {projects.find((p) => p.id === activeId)?.title}
-                </h4>
-              </Card>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      )}
-    </div>
-  );
-}
+export default ProjectListView;
