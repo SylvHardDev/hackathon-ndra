@@ -71,10 +71,12 @@ export function useMyAssignedProjectIds() {
 // Ajouter le composant AssignUsersDialog
 interface AssignUsersDialogProps {
   projectId: number;
+  onUsersAssigned?: () => Promise<void>; // Callback pour rafraîchir les données après assignation
 }
 
 export default function AssignUsersDialog({
   projectId,
+  onUsersAssigned,
 }: AssignUsersDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
@@ -94,14 +96,55 @@ export default function AssignUsersDialog({
     );
   };
 
+  // Sélectionner tous les utilisateurs filtrés qui ne sont pas déjà assignés
+  const handleSelectAll = () => {
+    const filteredUsers = filterUsers(users, searchQuery);
+    const availableUserIds = filteredUsers
+      .filter((user) => !assignedIds.includes(user.id))
+      .map((user) => user.id);
+
+    setSelectedUsers((prev) => {
+      // Si tous les utilisateurs disponibles sont déjà sélectionnés, désélectionner tous
+      if (availableUserIds.every((id) => prev.includes(id))) {
+        return prev.filter((id) => !availableUserIds.includes(id));
+      }
+      // Sinon, ajouter tous les utilisateurs disponibles à la sélection
+      return [...new Set([...prev, ...availableUserIds])];
+    });
+  };
+
   // Assigner les utilisateurs sélectionnés au projet
   const handleSubmit = async () => {
     const success = await handleAssignUsers(selectedUsers);
     if (success) {
+      // Appeler le callback de rafraîchissement si fourni
+      if (onUsersAssigned) {
+        try {
+          // Forcer le rafraîchissement immédiat
+          await onUsersAssigned();
+        } catch (err) {
+          console.error("Erreur lors du rafraîchissement des données:", err);
+        }
+      }
+
+      // Fermer la boîte de dialogue et réinitialiser l'état
       setOpen(false);
       setSelectedUsers([]);
       setSearchQuery("");
     }
+  };
+
+  // Vérifier si tous les utilisateurs filtrés disponibles sont sélectionnés
+  const areAllSelected = () => {
+    const filteredUsers = filterUsers(users, searchQuery);
+    const availableUserIds = filteredUsers
+      .filter((user) => !assignedIds.includes(user.id))
+      .map((user) => user.id);
+
+    return (
+      availableUserIds.length > 0 &&
+      availableUserIds.every((id) => selectedUsers.includes(id))
+    );
   };
 
   return (
@@ -111,7 +154,12 @@ export default function AssignUsersDialog({
         setOpen(newOpen);
         if (newOpen) {
           fetchUsers();
+          setSelectedUsers([]); // Réinitialiser la sélection à l'ouverture
         } else {
+          // Rafraîchir les données à la fermeture si des changements ont été effectués
+          if (selectedUsers.length > 0 && onUsersAssigned) {
+            onUsersAssigned().catch(console.error);
+          }
           setSelectedUsers([]);
           setSearchQuery("");
         }
@@ -178,59 +226,76 @@ export default function AssignUsersDialog({
                 : "Aucun utilisateur disponible"}
             </p>
           ) : (
-            <ScrollArea className="h-[300px] pr-4">
-              <div className="space-y-1">
-                {filterUsers(users, searchQuery).map((user) => {
-                  if (!user || typeof user.id !== "number") return null;
+            <>
+              <div className="flex justify-between items-center mb-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  className="text-xs"
+                >
+                  {areAllSelected()
+                    ? "Désélectionner tout"
+                    : "Sélectionner tout"}
+                </Button>
+                <span className="text-xs text-gray-500">
+                  {selectedUsers.length} sélectionné(s)
+                </span>
+              </div>
+              <ScrollArea className="h-[300px] pr-4">
+                <div className="space-y-1">
+                  {filterUsers(users, searchQuery).map((user) => {
+                    if (!user || typeof user.id !== "number") return null;
 
-                  const isAssigned = assignedIds.includes(user.id);
-                  const isSelected = selectedUsers.includes(user.id);
+                    const isAssigned = assignedIds.includes(user.id);
+                    const isSelected = selectedUsers.includes(user.id);
 
-                  return (
-                    <div
-                      key={user.id}
-                      className={`flex items-center space-x-3 p-2 rounded hover:bg-gray-50/5 ${
-                        isAssigned ? "opacity-60 bg-gray-100/5" : ""
-                      }`}
-                    >
-                      {!isAssigned && (
-                        <Checkbox
-                          id={`user-${user.id}`}
-                          checked={isSelected}
-                          onCheckedChange={() => handleToggleUser(user.id)}
-                        />
-                      )}
-
-                      {isAssigned && (
-                        <Check className="h-4 w-4 text-green-500" />
-                      )}
-
-                      <label
-                        htmlFor={`user-${user.id}`}
-                        className={`flex-1 ${
-                          !isAssigned ? "cursor-pointer" : ""
+                    return (
+                      <div
+                        key={user.id}
+                        className={`flex items-center space-x-3 p-2 rounded hover:bg-gray-50/5 ${
+                          isAssigned ? "opacity-60 bg-gray-100/5" : ""
                         }`}
                       >
-                        <div className="font-medium">
-                          {user.nom || "Sans nom"}
-                        </div>
-                        {user.role && (
-                          <div className="text-xs text-gray-400">
-                            {user.role === "admin"
-                              ? "Administrateur"
-                              : user.role === "employe"
-                              ? "Collaborateur"
-                              : user.role === "client"
-                              ? "Client"
-                              : user.role}
-                          </div>
+                        {!isAssigned && (
+                          <Checkbox
+                            id={`user-${user.id}`}
+                            checked={isSelected}
+                            onCheckedChange={() => handleToggleUser(user.id)}
+                          />
                         )}
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
+
+                        {isAssigned && (
+                          <Check className="h-4 w-4 text-green-500" />
+                        )}
+
+                        <label
+                          htmlFor={`user-${user.id}`}
+                          className={`flex-1 ${
+                            !isAssigned ? "cursor-pointer" : ""
+                          }`}
+                        >
+                          <div className="font-medium">
+                            {user.nom || "Sans nom"}
+                          </div>
+                          {user.role && (
+                            <div className="text-xs text-gray-400">
+                              {user.role === "admin"
+                                ? "Administrateur"
+                                : user.role === "employe"
+                                ? "Collaborateur"
+                                : user.role === "client"
+                                ? "Client"
+                                : user.role}
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </>
           )}
         </div>
 

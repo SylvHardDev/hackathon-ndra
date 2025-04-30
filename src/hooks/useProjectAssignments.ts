@@ -72,7 +72,6 @@ export function useProjectAssignments(projectId: number) {
       }
 
       setAssignedIds(newIds);
-      toast.success("Assignations mises à jour avec succès");
     } catch (err) {
       console.error('Erreur lors de la mise à jour des assignations:', err);
       setError((err as Error).message);

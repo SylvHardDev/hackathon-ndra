@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 export function useAssignUsersToProject(projectId: number) {
   const [submitting, setSubmitting] = useState(false);
-  const { addUser } = useProjectAssignments(projectId);
+  const { assignedIds, updateAssignments } = useProjectAssignments(projectId);
 
   const handleAssignUsers = async (selectedUsers: number[]) => {
     if (selectedUsers.length === 0) return;
@@ -21,10 +21,12 @@ export function useAssignUsersToProject(projectId: number) {
         throw new Error("Aucun utilisateur valide à assigner");
       }
 
-      // Assigner chaque utilisateur
-      for (const userId of validSelectedUsers) {
-        await addUser(userId);
-      }
+      // Créer un nouvel ensemble d'IDs d'utilisateurs assignés
+      // en combinant les utilisateurs déjà assignés avec les nouveaux
+      const newAssignedIds = [...new Set([...assignedIds, ...validSelectedUsers])];
+
+      // Mettre à jour toutes les assignations en une seule opération
+      await updateAssignments(newAssignedIds);
 
       // Notification de succès
       toast.success(

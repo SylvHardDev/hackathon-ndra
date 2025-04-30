@@ -9,12 +9,14 @@ interface RemoveUserDialogProps {
   projectId: number;
   userId: number;
   userName: string;
+  onUserRemoved?: () => Promise<void>;
 }
 
 export default function RemoveUserDialog({
   projectId,
   userId,
   userName,
+  onUserRemoved,
 }: RemoveUserDialogProps) {
   const [open, setOpen] = useState(false);
   const { updateAssignments, assignedIds } = useProjectAssignments(projectId);
@@ -26,6 +28,11 @@ export default function RemoveUserDialog({
 
       // Mettre à jour les assignations
       await updateAssignments(newAssignedIds);
+
+      // Appeler le callback de rafraîchissement si fourni
+      if (onUserRemoved) {
+        await onUserRemoved();
+      }
 
       toast.success(`${userName} a été retiré du projet`);
       setOpen(false);

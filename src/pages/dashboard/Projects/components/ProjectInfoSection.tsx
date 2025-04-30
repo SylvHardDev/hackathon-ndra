@@ -4,6 +4,7 @@ import { useRole } from "@/hooks/useRole";
 import { Calendar, FileText, Loader2, User } from "lucide-react";
 import AssignUsersDialog from "../AssignUsersDialog";
 import RemoveUserDialog from "../RemoveUserDialog";
+import { useState, useCallback } from "react";
 
 interface ProjectInfoSectionProps {
   projectId: number;
@@ -24,11 +25,28 @@ export function ProjectInfoSection({
   projectCreatedAt,
 }: ProjectInfoSectionProps) {
   const { isAdmin } = useRole();
-  const { users, loading: usersLoading } = useProjectUsers(projectId);
+  const {
+    users,
+    loading: usersLoading,
+    refreshUsers,
+  } = useProjectUsers(projectId);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fonction de rafraîchissement qui sera appelée après l'assignation d'utilisateurs
+  const handleUsersUpdated = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refreshUsers();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshUsers]);
 
   const admins = users.filter((user) => user.account.role === "admin");
   const collaborators = users.filter((user) => user.account.role === "employe");
   const clients = users.filter((user) => user.account.role === "client");
+
+  const isLoading = usersLoading || refreshing;
 
   return (
     <Card>
@@ -36,7 +54,10 @@ export function ProjectInfoSection({
         <div className="grid grid-cols-2 gap-6">
           {isAdmin && (
             <div className="absolute right-6 top-0">
-              <AssignUsersDialog projectId={projectId} />
+              <AssignUsersDialog
+                projectId={projectId}
+                onUsersAssigned={handleUsersUpdated}
+              />
             </div>
           )}
 
@@ -47,7 +68,7 @@ export function ProjectInfoSection({
                 <User className="text-gray-500" />
                 <h3 className="text-lg font-semibold">Administrateurs</h3>
               </div>
-              {usersLoading ? (
+              {isLoading ? (
                 <div className="flex justify-center py-4">
                   <Loader2 className="animate-spin" />
                 </div>
@@ -69,6 +90,7 @@ export function ProjectInfoSection({
                           projectId={projectId}
                           userId={user.account.id}
                           userName={user.account.nom}
+                          onUserRemoved={handleUsersUpdated}
                         />
                       )}
                     </div>
@@ -89,7 +111,7 @@ export function ProjectInfoSection({
               <User className="text-gray-500" />
               <h3 className="text-lg font-semibold">Collaborateurs</h3>
             </div>
-            {usersLoading ? (
+            {isLoading ? (
               <div className="flex justify-center py-4">
                 <Loader2 className="animate-spin" />
               </div>
@@ -111,6 +133,7 @@ export function ProjectInfoSection({
                         projectId={projectId}
                         userId={user.account.id}
                         userName={user.account.nom}
+                        onUserRemoved={handleUsersUpdated}
                       />
                     )}
                   </div>
@@ -130,7 +153,7 @@ export function ProjectInfoSection({
               <User className="text-gray-500" />
               <h3 className="text-lg font-semibold">Clients</h3>
             </div>
-            {usersLoading ? (
+            {isLoading ? (
               <div className="flex justify-center py-4">
                 <Loader2 className="animate-spin" />
               </div>
@@ -152,6 +175,7 @@ export function ProjectInfoSection({
                         projectId={projectId}
                         userId={user.account.id}
                         userName={user.account.nom}
+                        onUserRemoved={handleUsersUpdated}
                       />
                     )}
                   </div>
