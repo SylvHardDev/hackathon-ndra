@@ -49,6 +49,18 @@ export function useProjectAssignments(projectId: number) {
     }
   };
 
+  // Rafraîchit explicitement les assignations
+  const refreshAssignments = async () => {
+    setLoading(true);
+    try {
+      await fetchAssigned();
+    } catch (err) {
+      console.error('Erreur lors du rafraîchissement des assignations:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Mise à jour des assignations
   const updateAssignments = async (newIds: number[]) => {
     setLoading(true);
@@ -147,5 +159,6 @@ export function useProjectAssignments(projectId: number) {
     updateAssignments,
     addUser,
     removeUser,
+    refreshAssignments,
   };
 }

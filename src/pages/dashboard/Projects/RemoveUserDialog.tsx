@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useProjectAssignments } from "@/hooks/useProjectAssignments";
 import { toast } from "sonner";
@@ -19,9 +19,12 @@ export default function RemoveUserDialog({
   onUserRemoved,
 }: RemoveUserDialogProps) {
   const [open, setOpen] = useState(false);
-  const { updateAssignments, assignedIds } = useProjectAssignments(projectId);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const { updateAssignments, assignedIds, refreshAssignments } =
+    useProjectAssignments(projectId);
 
   const handleRemoveUser = async () => {
+    setIsRemoving(true);
     try {
       // Créer une nouvelle liste sans l'utilisateur à supprimer
       const newAssignedIds = assignedIds.filter((id) => id !== userId);
@@ -29,9 +32,16 @@ export default function RemoveUserDialog({
       // Mettre à jour les assignations
       await updateAssignments(newAssignedIds);
 
+      // Rafraîchir les données d'assignation dans tous les composants qui utilisent ce hook
+      await refreshAssignments();
+
       // Appeler le callback de rafraîchissement si fourni
       if (onUserRemoved) {
-        await onUserRemoved();
+        try {
+          await onUserRemoved();
+        } catch (err) {
+          console.error("Erreur lors du rafraîchissement des données:", err);
+        }
       }
 
       toast.success(`${userName} a été retiré du projet`);
@@ -39,6 +49,8 @@ export default function RemoveUserDialog({
     } catch (error) {
       console.error("Erreur lors de la suppression de l'utilisateur:", error);
       toast.error("Erreur lors de la suppression de l'utilisateur");
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -49,8 +61,13 @@ export default function RemoveUserDialog({
         size="icon"
         onClick={() => setOpen(true)}
         className="text-red-500 hover:text-red-600"
+        disabled={isRemoving}
       >
-        <Trash2 className="h-4 w-4" />
+        {isRemoving ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Trash2 className="h-4 w-4" />
+        )}
       </Button>
 
       <ConfirmationDialog

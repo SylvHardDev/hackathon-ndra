@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import useAuth from "@/hooks/useAuth";
-import { Check, Loader2, Search } from "lucide-react";
+import { Check, Loader2, Search, RefreshCw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -81,11 +81,27 @@ export default function AssignUsersDialog({
   const [open, setOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { assignedIds } = useProjectAssignments(projectId);
+  const { assignedIds, refreshAssignments } = useProjectAssignments(projectId);
   const { users, loadingUsers, errorMessage, fetchUsers, filterUsers } =
     useAssignUser();
   const { submitting, handleAssignUsers } = useAssignUsersToProject(projectId);
+
+  // Fonction pour rafraîchir les données du modal
+  const refreshModalData = async () => {
+    setRefreshing(true);
+    try {
+      // Rafraîchir la liste des utilisateurs assignés
+      await refreshAssignments();
+      // Rafraîchir la liste des utilisateurs disponibles
+      await fetchUsers();
+    } catch (err) {
+      console.error("Erreur lors du rafraîchissement des données:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Gérer la sélection d'un utilisateur
   const handleToggleUser = (userId: number) => {
@@ -122,6 +138,8 @@ export default function AssignUsersDialog({
         try {
           // Forcer le rafraîchissement immédiat
           await onUsersAssigned();
+          // Rafraîchir également les données du modal
+          await refreshModalData();
         } catch (err) {
           console.error("Erreur lors du rafraîchissement des données:", err);
         }
@@ -153,13 +171,12 @@ export default function AssignUsersDialog({
       onOpenChange={(newOpen) => {
         setOpen(newOpen);
         if (newOpen) {
-          fetchUsers();
-          setSelectedUsers([]); // Réinitialiser la sélection à l'ouverture
+          // Réinitialiser l'état et rafraîchir les données à l'ouverture
+          setSelectedUsers([]);
+          setSearchQuery("");
+          refreshModalData();
         } else {
-          // Rafraîchir les données à la fermeture si des changements ont été effectués
-          if (selectedUsers.length > 0 && onUsersAssigned) {
-            onUsersAssigned().catch(console.error);
-          }
+          // Réinitialiser l'état à la fermeture
           setSelectedUsers([]);
           setSearchQuery("");
         }
@@ -173,7 +190,25 @@ export default function AssignUsersDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Assigner des utilisateurs au projet</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Assigner des utilisateurs au projet</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.preventDefault();
+                refreshModalData();
+              }}
+              disabled={refreshing || loadingUsers}
+              className="h-8 w-8"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${
+                  refreshing || loadingUsers ? "animate-spin" : ""
+                }`}
+              />
+            </Button>
+          </DialogTitle>
         </DialogHeader>
 
         {/* Barre de recherche */}
@@ -211,7 +246,7 @@ export default function AssignUsersDialog({
         )}
 
         <div className="py-2">
-          {loadingUsers ? (
+          {refreshing || loadingUsers ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
             </div>
@@ -303,15 +338,15 @@ export default function AssignUsersDialog({
           <Button
             variant="secondary"
             onClick={() => setOpen(false)}
-            disabled={submitting}
+            disabled={submitting || refreshing}
           >
             Annuler
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={selectedUsers.length === 0 || submitting}
+            disabled={selectedUsers.length === 0 || submitting || refreshing}
           >
-            {submitting ? (
+            {submitting || refreshing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Traitement...
