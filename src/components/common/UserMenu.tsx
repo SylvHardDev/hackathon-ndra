@@ -9,13 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLogout } from "@/hooks/useLogout";
-import {
-  CircleUser,
-  CreditCard,
-  LogOut,
-  Plus,
-  User as UserIcon,
-} from "lucide-react";
+import { CircleUser, CreditCard, LogOut, User as UserIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { useUser } from "@/hooks/useUser";
@@ -45,10 +39,10 @@ export function UserMenu() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {userInfo?.[0].nom}
+              {userInfo?.[0]?.nom || data?.session?.user?.email?.split("@")[0]}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {userInfo?.[0].email}
+              {userInfo?.[0]?.email || data?.session?.user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -71,15 +65,6 @@ export function UserMenu() {
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
-
-        {/* <DropdownMenuItem asChild>
-          <Link to="/new-project" className="w-full cursor-pointer">
-            <Plus className="mr-2 h-4 w-4" />
-            <span>New Project</span>
-          </Link>
-        </DropdownMenuItem> */}
-
-        {/* <DropdownMenuSeparator /> */}
 
         <DropdownMenuItem
           onClick={logout}
