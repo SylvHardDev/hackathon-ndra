@@ -20,7 +20,13 @@ import {
 import { Plus, Loader2 } from "lucide-react";
 import { useCreateUser } from "@/hooks/useCreateUser";
 
-export default function CreateUserDialog() {
+interface CreateUserDialogProps {
+  onUserCreated?: () => Promise<void>;
+}
+
+export default function CreateUserDialog({
+  onUserCreated,
+}: CreateUserDialogProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -40,13 +46,18 @@ export default function CreateUserDialog() {
         role,
       },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
           // Réinitialiser le formulaire
           setEmail("");
           setPassword("");
           setFullName("");
           setRole("employe");
           setOpen(false);
+
+          // Rafraîchir la liste des utilisateurs si le callback est fourni
+          if (onUserCreated) {
+            await onUserCreated();
+          }
         },
       }
     );

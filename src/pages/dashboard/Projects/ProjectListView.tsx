@@ -414,6 +414,35 @@ const ProjectListView = forwardRef<ProjectListViewRef, ProjectListViewProps>(
       );
     }
 
+    // Afficher un message si l'utilisateur n'a pas de projets assignés
+    if (!isAdmin && assignedIds.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center p-8 border rounded-lg bg-card">
+          <div className="text-center space-y-4">
+            <h3 className="text-xl font-medium">Aucun projet assigné</h3>
+            <p className="text-muted-foreground">
+              Vous n'avez pas encore été assigné à un projet. Veuillez contacter
+              votre administrateur pour plus d'informations.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // Afficher un message si aucun projet ne correspond aux filtres
+    if (filteredProjects.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center p-8 border rounded-lg bg-card">
+          <div className="text-center space-y-4">
+            <h3 className="text-xl font-medium">Aucun projet trouvé</h3>
+            <p className="text-muted-foreground">
+              Aucun projet ne correspond à vos critères de recherche.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-4">
         <div className="mb-4">
