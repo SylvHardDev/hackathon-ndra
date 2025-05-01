@@ -30,11 +30,23 @@ export function useResetPassword() {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ password }: ResetPasswordFormData) => {
-      const { error } = await supabase.auth.updateUser({
+      // Mettre à jour le mot de passe
+      const { error: passwordError } = await supabase.auth.updateUser({
         password,
       });
 
-      if (error) throw error;
+      if (passwordError) throw passwordError;
+
+      // Mettre à jour les métadonnées pour indiquer que le mot de passe a été réinitialisé
+      const { error: metadataError } = await supabase.auth.updateUser({
+        data: {
+          needs_password_reset: false,
+          initial_user: false,
+          password_updated_at: new Date().toISOString(),
+        },
+      });
+
+      if (metadataError) throw metadataError;
 
       return { success: true };
     },
@@ -42,7 +54,7 @@ export function useResetPassword() {
       toast.success("Mot de passe mis à jour", {
         description: "Votre mot de passe a été réinitialisé avec succès",
       });
-      navigate("/login");
+      navigate("/dashboard");
     },
     onError: (error) => {
       toast.error("Erreur", {

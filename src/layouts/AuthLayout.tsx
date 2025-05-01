@@ -1,12 +1,18 @@
 import useAuth from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 export default function AuthLayout() {
   const { userStatus } = useAuth();
   const { isLoading } = useRole();
   const accessToken = localStorage.getItem("token");
   const refreshToken = localStorage.getItem("refresh_token");
+  const location = useLocation();
+
+  // Permettre l'accès à reset-password même sans être complètement authentifié
+  if (location.pathname === "/reset-password" && userStatus === "signed-in") {
+    return <Outlet />;
+  }
 
   if (userStatus === "signed-out" && (!accessToken || !refreshToken)) {
     return <Navigate to="/login" replace />;

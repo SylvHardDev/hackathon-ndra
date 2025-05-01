@@ -19,6 +19,12 @@ export function useCreateUser() {
         {
           email,
           password,
+          options: {
+            data: {
+              needs_password_reset: true,
+              initial_user: true,
+            },
+          },
         }
       );
 

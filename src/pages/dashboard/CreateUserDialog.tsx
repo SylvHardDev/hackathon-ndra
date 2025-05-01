@@ -17,58 +17,39 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { Plus, Loader2 } from "lucide-react";
+import { useCreateUser } from "@/hooks/useCreateUser";
 
 export default function CreateUserDialog() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState("employe");
+  const [role, setRole] = useState<"admin" | "employe" | "client">("employe");
   const [open, setOpen] = useState(false);
+
+  const createUserMutation = useCreateUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("email", email);
-    console.log("password", password);
-    console.log("fullName", fullName);
-    console.log("role", role);
-    try {
-      // Créer l'utilisateur dans Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+    createUserMutation.mutate(
+      {
         email,
         password,
-      });
-
-      if (authError) throw authError;
-
-      // Créer l'utilisateur dans la table accounts
-      const { error: dbError } = await supabase.from("accounts").insert([
-        {
-          user_id: authData.user?.id,
-          nom: fullName,
-          role,
+        nom: fullName,
+        role,
+      },
+      {
+        onSuccess: () => {
+          // Réinitialiser le formulaire
+          setEmail("");
+          setPassword("");
+          setFullName("");
+          setRole("employe");
+          setOpen(false);
         },
-      ]);
-
-      if (dbError) throw dbError;
-
-      toast.success("L'utilisateur a été créé avec succès");
-
-      // Réinitialiser le formulaire
-      setEmail("");
-      setPassword("");
-      setFullName("");
-      setRole("employe");
-      setOpen(false);
-    } catch (error) {
-      console.error("Erreur lors de la création de l'utilisateur:", error);
-      toast.error(
-        "Une erreur est survenue lors de la création de l'utilisateur"
-      );
-    }
+      }
+    );
   };
 
   return (
@@ -129,7 +110,12 @@ export default function CreateUserDialog() {
             <Label htmlFor="role" className="mb-2">
               Rôle
             </Label>
-            <Select value={role} onValueChange={setRole}>
+            <Select
+              value={role}
+              onValueChange={(value) =>
+                setRole(value as "admin" | "employe" | "client")
+              }
+            >
               <SelectTrigger className="w-1/2">
                 <SelectValue placeholder="Choisissez un rôle" />
               </SelectTrigger>
@@ -141,8 +127,19 @@ export default function CreateUserDialog() {
             </Select>
           </div>
           <DialogFooter>
-            <Button type="submit" className="w-full">
-              Créer l'utilisateur
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={createUserMutation.isPending}
+            >
+              {createUserMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Création en cours...
+                </>
+              ) : (
+                "Créer l'utilisateur"
+              )}
             </Button>
           </DialogFooter>
         </form>
