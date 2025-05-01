@@ -16,7 +16,7 @@ export const useUser = (userId: string | undefined) => {
       if (!userId) return [];
 
       const { data, error } = await supabase
-        .from("accounts_with_email")
+        .from("accounts")
         .select("*")
         .eq("user_id", userId);
 
@@ -27,3 +27,4 @@ export const useUser = (userId: string | undefined) => {
     enabled: !!userId,
   });
 };
+

@@ -22,12 +22,13 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
+import { getAllUsers } from "../../hooks/getAllUsers";
 
 interface User {
   id: number;
-  email: string;
   nom: string;
   role: string;
+  email: string;
 }
 
 export function UserManagement() {
@@ -36,22 +37,18 @@ export function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const getUsersMutation = getAllUsers();
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from("accounts")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setUsers(data || []);
+      setLoading(true);
+      const result = await getUsersMutation.mutateAsync();
+      setUsers(result);
     } catch (error) {
       console.error("Erreur lors de la récupération des utilisateurs:", error);
       toast({
         title: "Erreur",
-        description:
-          "Une erreur est survenue lors de la récupération des utilisateurs",
+        description: "Impossible de récupérer la liste des utilisateurs",
         variant: "destructive",
       });
     } finally {
@@ -118,11 +115,11 @@ export function UserManagement() {
     fetchUsers();
   }, []);
 
-  // const filteredUsers = users.filter(
-  //   (user) =>
-  //     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //     user.nom.toLowerCase().includes(searchQuery.toLowerCase())
-  // );
+  const filteredUsers = users.filter(
+    (user) =>
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.nom.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -163,7 +160,7 @@ export function UserManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>{user.nom}</TableCell>
                 <TableCell>{user.email}</TableCell>
