@@ -72,14 +72,14 @@ export function UserMenu() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem asChild>
+        {/* <DropdownMenuItem asChild>
           <Link to="/new-project" className="w-full cursor-pointer">
             <Plus className="mr-2 h-4 w-4" />
             <span>New Project</span>
           </Link>
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
 
-        <DropdownMenuSeparator />
+        {/* <DropdownMenuSeparator /> */}
 
         <DropdownMenuItem
           onClick={logout}

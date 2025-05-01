@@ -27,7 +27,7 @@ const Navbar = ({ className }: HeaderProps) => {
         </Link>
 
         <div className="flex items-center gap-4">
-          <UserMenu />
+          {/* <UserMenu /> */}
           <div className="flex items-center gap-3">
             <>
               <Button asChild>
