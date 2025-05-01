@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { useToast } from "./use-toast";
+import { toast } from "sonner";
 
 // Schéma de validation pour la réinitialisation du mot de passe
 const resetPasswordSchema = z
@@ -27,7 +27,6 @@ type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
  */
 export function useResetPassword() {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ password }: ResetPasswordFormData) => {
@@ -40,16 +39,13 @@ export function useResetPassword() {
       return { success: true };
     },
     onSuccess: () => {
-      toast({
-        title: "Mot de passe mis à jour",
+      toast.success("Mot de passe mis à jour", {
         description: "Votre mot de passe a été réinitialisé avec succès",
       });
       navigate("/login");
     },
     onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
+      toast.error("Erreur", {
         description: error.message || "Une erreur est survenue",
       });
     },

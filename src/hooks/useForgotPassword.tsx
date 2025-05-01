@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useToast } from "./use-toast";
+import { toast } from "sonner";
 
 // Schéma de validation avec Zod
 const forgotPasswordSchema = z.object({
@@ -17,8 +17,6 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
  * @returns Un objet contenant les fonctions et données pour la réinitialisation
  */
 export function useForgotPassword() {
-  const { toast } = useToast();
-
   const forgotPasswordMutation = useMutation({
     mutationFn: async ({ email }: ForgotPasswordFormData) => {
       // Envoyer le lien de réinitialisation
@@ -31,16 +29,13 @@ export function useForgotPassword() {
       return { email };
     },
     onSuccess: () => {
-      toast({
-        title: "Email envoyé",
+      toast.success("Email envoyé", {
         description:
           "Vérifiez votre boîte mail pour réinitialiser votre mot de passe",
       });
     },
     onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
+      toast.error("Erreur", {
         description: error.message || "Une erreur est survenue",
       });
     },
