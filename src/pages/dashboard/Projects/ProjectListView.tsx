@@ -213,13 +213,9 @@ const ProjectUsers = ({ projectId }: { projectId: number }) => {
   if (loading)
     return <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />;
 
-  console.log("Users data:", users);
-
   return (
     <div className="flex -space-x-2">
       {users.map((user, index) => {
-        console.log("User account:", user.account);
-        console.log("User nom:", user.account.nom);
         return (
           <TooltipProvider key={user.account.id}>
             <Tooltip>

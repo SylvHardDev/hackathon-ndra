@@ -35,7 +35,7 @@ export function useProjectUsers(projectId: number) {
         .order("account_id", { ascending: true });
 
       if (error) throw error;
-      console.log("Raw data from Supabase:", data);
+      // console.log("Raw data from Supabase:", data);
       setUsers(data as unknown as ProjectUser[]);
     } catch (err) {
       console.error("Error fetching users:", err);
