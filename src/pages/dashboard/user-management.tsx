@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useRole } from "@/hooks/useRole";
 import { getAllUsers } from "../../hooks/getAllUsers";
 
@@ -36,7 +36,6 @@ export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
   const getUsersMutation = getAllUsers();
 
   const fetchUsers = async () => {
@@ -46,11 +45,7 @@ export function UserManagement() {
       setUsers(result);
     } catch (error) {
       console.error("Erreur lors de la récupération des utilisateurs:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de récupérer la liste des utilisateurs",
-        variant: "destructive",
-      });
+      toast.error("Impossible de récupérer la liste des utilisateurs");
     } finally {
       setLoading(false);
     }
@@ -71,17 +66,10 @@ export function UserManagement() {
         )
       );
 
-      toast({
-        title: "Succès",
-        description: "Le rôle de l'utilisateur a été mis à jour",
-      });
+      toast.success("Le rôle de l'utilisateur a été mis à jour");
     } catch (error) {
       console.error("Erreur lors de la mise à jour du rôle:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour du rôle",
-        variant: "destructive",
-      });
+      toast.error("Une erreur est survenue lors de la mise à jour du rôle");
     }
   };
 
@@ -96,18 +84,12 @@ export function UserManagement() {
 
       setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
 
-      toast({
-        title: "Succès",
-        description: "L'utilisateur a été supprimé",
-      });
+      toast.success("L'utilisateur a été supprimé");
     } catch (error) {
       console.error("Erreur lors de la suppression de l'utilisateur:", error);
-      toast({
-        title: "Erreur",
-        description:
-          "Une erreur est survenue lors de la suppression de l'utilisateur",
-        variant: "destructive",
-      });
+      toast.error(
+        "Une erreur est survenue lors de la suppression de l'utilisateur"
+      );
     }
   };
 

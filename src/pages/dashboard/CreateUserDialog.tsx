@@ -19,19 +19,22 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function CreateUserDialog() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("employe");
   const [open, setOpen] = useState(false);
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log("email", email);
+    console.log("password", password);
+    console.log("fullName", fullName);
+    console.log("role", role);
     try {
       // Créer l'utilisateur dans Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -44,34 +47,27 @@ export default function CreateUserDialog() {
       // Créer l'utilisateur dans la table accounts
       const { error: dbError } = await supabase.from("accounts").insert([
         {
-          id: authData.user?.id,
-          email,
-          full_name: fullName,
+          user_id: authData.user?.id,
+          nom: fullName,
           role,
         },
       ]);
 
       if (dbError) throw dbError;
 
-      toast({
-        title: "Succès",
-        description: "L'utilisateur a été créé avec succès",
-      });
+      toast.success("L'utilisateur a été créé avec succès");
 
       // Réinitialiser le formulaire
       setEmail("");
       setPassword("");
       setFullName("");
-      setRole("user");
+      setRole("employe");
       setOpen(false);
     } catch (error) {
       console.error("Erreur lors de la création de l'utilisateur:", error);
-      toast({
-        title: "Erreur",
-        description:
-          "Une erreur est survenue lors de la création de l'utilisateur",
-        variant: "destructive",
-      });
+      toast.error(
+        "Une erreur est survenue lors de la création de l'utilisateur"
+      );
     }
   };
 
@@ -139,7 +135,7 @@ export default function CreateUserDialog() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Administrateur</SelectItem>
-                <SelectItem value="user">Utilisateur</SelectItem>
+                <SelectItem value="employe">Collaborateur</SelectItem>
                 <SelectItem value="client">Client</SelectItem>
               </SelectContent>
             </Select>
