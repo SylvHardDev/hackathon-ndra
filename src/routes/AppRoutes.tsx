@@ -15,6 +15,7 @@ import { UserManagement } from "@/pages/dashboard/user-management";
 import { Route, Routes } from "react-router-dom";
 import ProjectDetail from "@/pages/dashboard/project-detail";
 import VideoEditPage from "@/pages/dashboard/Projects/VideoEditPage";
+import AdminProtectedRoute from "@/layouts/AdminProtectedRoute";
 
 export default function App() {
   return (
@@ -35,11 +36,17 @@ export default function App() {
           {/* Route pour les utilisateurs non-admin */}
           <Route path="/user-profile" element={<UserPage />} />
 
-          {/* Routes Admin (protégées par AuthLayout) */}
+          {/* Routes Admin (protégées par AdminProtectedRoute) */}
+          <Route element={<AdminProtectedRoute />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/users" element={<UserManagement />} />
+            </Route>
+          </Route>
+
+          {/* Routes accessibles par tous les utilisateurs authentifiés */}
           <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profiledashboard" element={<Profile />} />
-            <Route path="/users" element={<UserManagement />} />
             <Route path="/projects" element={<ProjectManagement />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
             <Route

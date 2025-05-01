@@ -63,7 +63,13 @@ export function useLogin() {
         title: "Connexion réussie",
         description: `Bienvenue ${data.account.nom}`,
       });
-      navigate("/dashboard");
+
+      // Redirection selon le rôle de l'utilisateur
+      if (data.account.role === "admin") {
+        navigate("/dashboard");
+      } else {
+        navigate("/projects");
+      }
     },
     onError: (error) => {
       toast({

@@ -1,5 +1,4 @@
 import { ThemeToggle } from "./ThemeToggle";
-import { UserMenu } from "./UserMenu";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
@@ -27,7 +26,6 @@ const Navbar = ({ className }: HeaderProps) => {
         </Link>
 
         <div className="flex items-center gap-4">
-          {/* <UserMenu /> */}
           <div className="flex items-center gap-3">
             <>
               <Button asChild>

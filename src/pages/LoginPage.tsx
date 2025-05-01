@@ -16,11 +16,28 @@ import { Link } from "react-router-dom";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const { form, login, isLoading } = useLogin();
+  const { form, login, isLoading, error } = useLogin();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  // Déterminer le type d'erreur pour afficher un message spécifique
+  const getErrorMessage = (errorMessage: string | undefined) => {
+    if (!errorMessage) return null;
+
+    if (errorMessage.includes("Invalid login credentials")) {
+      return "Identifiants invalides. Vérifiez votre email et mot de passe.";
+    } else if (errorMessage.includes("Email not confirmed")) {
+      return "Votre email n'a pas été confirmé. Veuillez vérifier votre boîte mail.";
+    } else if (errorMessage.includes("Too many requests")) {
+      return "Trop de tentatives. Veuillez réessayer plus tard.";
+    }
+
+    return errorMessage;
+  };
+
+  const errorMessage = error ? getErrorMessage(error.message) : null;
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
@@ -32,6 +49,13 @@ export default function LoginPage() {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md flex items-center text-sm">
+              <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+              {errorMessage}
+            </div>
+          )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(login)} className="space-y-4">
               <FormField
@@ -101,6 +125,11 @@ export default function LoginPage() {
                           <Eye size={20} />
                         )}
                       </button>
+                      {fieldState.error && (
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-10 pointer-events-none">
+                          <AlertCircle className="h-5 w-5 text-red-500" />
+                        </div>
+                      )}
                     </div>
                     <FormMessage />
                   </FormItem>
